@@ -12,6 +12,9 @@
       TRANSACTION_ID   NUMBER(10,0)
    );
    
+
+************************************************************
+
 -- CREATE ADDRESS ENTITY   
    CREATE TABLE ADDRESS   
    (  ADDRESS_ID   NUMBER(25,0), 
@@ -20,7 +23,9 @@
 	  ZIP_CODE   VARCHAR2(40), 
 	  CITY_ID   VARCHAR2(255)
    );
-   
+
+************************************************************
+
   ALTER TABLE BOOKING   ADD CONSTRAINT BOOKING_PK   PRIMARY KEY (  BOOKING_ID  );
   ALTER TABLE BOOKING   MODIFY (  BOOKING_STATUS   CONSTRAINT BOOKING_STATUS_NOT_NULL   NOT NULL ENABLE);
   ALTER TABLE BOOKING   MODIFY (  CREATED_START_DATE   CONSTRAINT CREATED_START_DATE_NOT_NULL   NOT NULL ENABLE);
@@ -37,19 +42,23 @@
 	  REFERENCES TRANSACTION   (  TRANSACTION_ID  ) ON DELETE CASCADE ENABLE;
 	  
 	  
+************************************************************
+	  
   ALTER TABLE ADDRESS   ADD CONSTRAINT ADDRESS_PK   PRIMARY KEY (  ADDRESS_ID  );
   ALTER TABLE ADDRESS   MODIFY (  ADDRESS_LINE_1   CONSTRAINT ADDRESS_LINE_1_NOT_NULL   NOT NULL ENABLE);
   ALTER TABLE ADDRESS   MODIFY (  ZIP_CODE   CONSTRAINT ZIP_CODE_NOT_NULL   NOT NULL ENABLE);
   ALTER TABLE ADDRESS   MODIFY (  CITY_ID   CONSTRAINT CITY_ID_NOT_NULL   NOT NULL ENABLE);
   
-  
+
+************************************************************
+
   --CREATE PACKAGE
   CREATE OR REPLACE EDITIONABLE PACKAGE PKG_BOOKING   AS 
     
     FUNCTION BODY_BOOKING(
         vBOOKING_ID IN BOOKING.BOOKING_ID%type,
         vBOOKING_STATUS IN BOOKING.BOOKING_STATUS%type,
-        vCREATED_START_DATE IN BOOKING.CREATED_START_DATE %type,
+        vCREATED_START_DATE IN BOOKING.CREATED_START_DATE%type,
         vCREATED_END_DATE IN BOOKING.CREATED_END_DATE%type,
         vACTUAL_START_DATE IN BOOKING.ACTUAL_START_DATE%type,
         vACTUAL_END_DATE IN BOOKING.ACTUAL_END_DATE%type,
@@ -63,6 +72,20 @@
         
 END PKG_BOOKING;
 
+************************************************************
+
+  --CREATE PACKAGE
+  CREATE OR REPLACE EDITIONABLE PACKAGE PKG_ADDRESS   AS 
+    
+    FUNCTION ADDRESS_VALIDATION(
+        vADDRESS_LINE_1 IN ADDRESS.ADDRESS_LINE_1%type,
+        vADDRESS_LINE_2 IN ADDRESS.ADDRESS_LINE_2%type,
+        vZIP_CODE IN ADDRESS.ZIP_CODE%type
+    ) RETURN VARCHAR2;
+	
+END PKG_ADDRESS;
+
+************************************************************
 
  --CREATE PACKAGE BODY
  CREATE OR REPLACE EDITIONABLE PACKAGE BODY PKG_BOOKING   AS
@@ -225,3 +248,69 @@ END PKG_BOOKING;
 	end COMPARE_TIMESTAMP;
 
 END PKG_BOOKING;
+
+************************************************************
+
+ --CREATE PACKAGE BODY
+ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PKG_ADDRESS   AS
+
+  FUNCTION ADDRESS_VALIDATION(
+        vADDRESS_LINE_1 IN ADDRESS.ADDRESS_LINE_1%type,
+        vADDRESS_LINE_2 IN ADDRESS.ADDRESS_LINE_2%type,
+        vZIP_CODE IN ADDRESS.ZIP_CODE%type
+    ) RETURN VARCHAR2 AS
+
+			ZIPCODE_LENGTH NUMBER;
+			INVALID_ADDR1_EX EXCEPTION;
+			INVALID_ZIP_CODE_EX EXCEPTION;
+			ZIP_CODE_NAN_EX EXCEPTION;
+			ZIPCODE_LENGTH_EX EXCEPTION;
+        
+    BEGIN
+        
+		EXECUTE IMMEDIATE ('SELECT LENGTH(''' ||vZIP_CODE|| ''') FROM DUAL') INTO ZIPCODE_LENGTH;
+		
+		-- CHECK IF BOOKING STATUS IS BLACK OR NULL
+        if vADDRESS_LINE_1 is NULL or LENGTH(trim(vADDRESS_LINE_1)) IS NULL then
+            raise INVALID_ADDR1_EX;
+        end if;
+		
+		-- CHECK IF BOOKING STATUS IS BLACK OR NULL
+        if vZIP_CODE is NULL or LENGTH(trim(vZIP_CODE)) IS NULL then
+            raise INVALID_ZIP_CODE_EX;
+        end if;
+		
+		-- CHECK IF BOOKING STATUS IS BLACK OR NULL
+        if vZIP_CODE = 0 then
+            raise INVALID_ZIP_CODE_EX;
+        end if;
+		
+		-- CHECK IF BOOKING STATUS IS BLACK OR NULL
+        if ZIPCODE_LENGTH <> 5 then
+            raise ZIPCODE_LENGTH_EX;
+        end if;
+
+		-- CHECK IF DEPT_NAME IS NOT A NUMBER 
+		IF(NOT VALIDATE_CONVERSION(vZIP_CODE AS NUMBER) = 1) THEN 
+			RAISE ZIP_CODE_NAN_EX;
+		END IF;
+		
+        RETURN 'YES';
+    EXCEPTION
+        when INVALID_ADDR1_EX then
+            dbms_output.put_line('[ERROR] Invalid Address, Address Line 1 is mandatory');
+            RETURN 'NO';
+        when INVALID_ZIP_CODE_EX then
+            dbms_output.put_line('[ERROR] Invalid ZipCode, ZipCode is mandatory');
+            RETURN 'NO';
+        when ZIP_CODE_NAN_EX then
+            dbms_output.put_line('[ERROR] ZipCode need to be a valid number');
+            RETURN 'NO';
+        when ZIPCODE_LENGTH_EX then
+            dbms_output.put_line('[ERROR] Invalid ZipCode, ZipCode should not contain more than 5 digits');
+            RETURN 'NO';
+        when others then
+            RETURN 'NO';
+  END ADDRESS_VALIDATION;
+
+END PKG_ADDRESS;
