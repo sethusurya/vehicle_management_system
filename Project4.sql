@@ -58,7 +58,7 @@
 	
 	 FUNCTION COMPARE_TIMESTAMP(
         VTIME_ONE IN TIMESTAMP,
-        VTIMESTAMP_TWO IN TIMESTAMP,
+        VTIMESTAMP_TWO IN TIMESTAMP
     ) RETURN VARCHAR2;
         
 END PKG_BOOKING;
@@ -85,14 +85,12 @@ END PKG_BOOKING;
 			ACTUAL_START_DATE_EX EXCEPTION;
 			ACTUAL_END_DATE_EX EXCEPTION;
 			DUPLICATE_BOOKING_EX EXCEPTION;
-			CREATED_START_DATE_GREATER EXCEPTION;
-			CREATED_START_DATE_SMALLER EXCEPTION;
-			CREATED_END_DATE_GREATER EXCEPTION;
-			CREATED_END_DATE_SMALLER EXCEPTION;
-			ACTUAL_START_DATE_GREATER EXCEPTION;
-			ACTUAL_START_DATE_SMALLER EXCEPTION;
-			ACTUAL_END_DATE_GREATER EXCEPTION;
-			ACTUAL_END_DATE_SMALLER EXCEPTION;
+			CREATED_START_DATE_LESS_THAN_SYS_EX EXCEPTION;
+			CREATED_START_DATE_SMALLER_EX EXCEPTION;
+			CREATED_END_DATE_LESS_THAN_SYS_EX EXCEPTION;
+			ACTUAL_START_DATE_LESS_THAN_SYS_EX EXCEPTION;
+			ACTUAL_START_DATE_SMALLER_EX EXCEPTION;
+			ACTUAL_END_DATE_LESS_THAN_SYS_EX EXCEPTION;
 			
         
     BEGIN
@@ -126,41 +124,37 @@ END PKG_BOOKING;
 		if vACTUAL_END_DATE is NULL or to_char(LENGTH(vACTUAL_END_DATE)) is NULL then
             raise ACTUAL_END_DATE_EX;
         end if;
-		
-		-- CHECK IF ACTUAL_END_DATE IS BLANK OR NULL
-		if COMPARE_TIMESTAMP() is NULL or to_char(LENGTH(vACTUAL_END_DATE)) is NULL then
-            raise ACTUAL_END_DATE_EX;
-        end if;
-		
+                
 		-- CHECK IF CREATED_START_DATE IS GREATER THAN CURRENT_DATE
 		if COMPARE_TIMESTAMP(vCREATED_START_DATE, SYSTIMESTAMP ) < 0 then
             raise CREATED_START_DATE_LESS_THAN_SYS_EX;
         end if;
-		
+        
 		-- CHECK IF CREATED_START_DATE IS LESS THAN CREATED_END_DATE
 		if COMPARE_TIMESTAMP(vCREATED_END_DATE, vCREATED_START_DATE ) < 0 then
             raise CREATED_START_DATE_SMALLER_EX;
         end if;
-		
+        
 		-- CHECK IF CREATED_END_DATE IS GREATER THAN CURRENT_DATE
 		if COMPARE_TIMESTAMP(vCREATED_END_DATE, SYSTIMESTAMP ) < 0 then
             raise CREATED_END_DATE_LESS_THAN_SYS_EX;
         end if;
-	
+        
 		-- CHECK IF ACTUAL_START_DATE IS GREATER THAN CURRENT_DATE
 		if COMPARE_TIMESTAMP(vACTUAL_START_DATE, SYSTIMESTAMP ) < 0 then
-            raise CREATED_START_DATE_LESS_THAN_SYS_EX;
+            raise ACTUAL_START_DATE_LESS_THAN_SYS_EX;
         end if;
-		
+        
 		-- CHECK IF ACTUAL_START_DATE IS LESS THAN ACTUAL_END_DATE
 		if COMPARE_TIMESTAMP(vACTUAL_END_DATE, vACTUAL_START_DATE ) < 0 then
-            raise CREATED_START_DATE_SMALLER_EX;
+            raise ACTUAL_START_DATE_SMALLER_EX;
         end if;
-		
+        
 		-- CHECK IF ACTUAL_END_DATE IS GREATER THAN CURRENT_DATE
 		if COMPARE_TIMESTAMP(vACTUAL_END_DATE, SYSTIMESTAMP ) < 0 then
-            raise CREATED_END_DATE_LESS_THAN_SYS_EX;
-                        
+            raise ACTUAL_END_DATE_LESS_THAN_SYS_EX;
+		end if;
+        
         begin
              select BOOKING_ID into EXISTING_BOOKING from BOOKING where BOOKING_ID = vBOOKING_ID;
              if EXISTING_BOOKING is NOT NULL then
@@ -176,25 +170,43 @@ END PKG_BOOKING;
         RETURN 'YES';
     EXCEPTION
         when INVALID_BOOKING_EX then
-            dbms_output.put_line('Invalid Booking Type, Booking Type cannot be NULL or Empty');
+            dbms_output.put_line('[ERROR] Invalid Booking Type, Booking Type cannot be NULL or Empty');
             RETURN 'NO';
         when INVALID_BOOKING_VAL_EX then
-            dbms_output.put_line('Invalid Booking Type, allowed values are ''COMPLETED'', ''IN-PROGRESS'',''OPEN''');
+            dbms_output.put_line('[ERROR] Invalid Booking Type, allowed values are ''COMPLETED'', ''IN-PROGRESS'',''OPEN''');
             RETURN 'NO';
         when CREATED_START_DATE_EX then
-            dbms_output.put_line('Invalid Created Start Date, Enter a valid Created Start Date');
+            dbms_output.put_line('[ERROR] Invalid Created Start Date, Enter a valid Created Start Date');
             RETURN 'NO';
         when CREATED_END_DATE_EX then
-            dbms_output.put_line('Invalid Created End Date, Enter a valid Created End Date');
+            dbms_output.put_line('[ERROR] Invalid Created End Date, Enter a valid Created End Date');
             RETURN 'NO';
         when ACTUAL_START_DATE_EX then
-            dbms_output.put_line('Invalid Actual Start Date, Enter a valid Created End Date');
+            dbms_output.put_line('[ERROR] Invalid Actual Start Date, Enter a valid Created End Date');
             RETURN 'NO';
         when ACTUAL_END_DATE_EX then
-            dbms_output.put_line('Invalid Actual End Date, Enter a valid Created End Date');
+            dbms_output.put_line('[ERROR] Invalid Actual End Date, Enter a valid Created End Date');
             RETURN 'NO';
         when DUPLICATE_BOOKING_EX then
-            dbms_output.put_line('Duplicate booking, booking with the same id already exists');
+            dbms_output.put_line('[ERROR] Duplicate booking, booking with the same id already exists');
+			RETURN 'NO';
+        when CREATED_START_DATE_LESS_THAN_SYS_EX then
+            dbms_output.put_line('[ERROR] CreatedStartDate cannot be less the current date');
+			RETURN 'NO';
+        when CREATED_START_DATE_SMALLER_EX then
+            dbms_output.put_line('[ERROR] CreatedStartDate cannot be less the CreatedEndDate');
+            RETURN 'NO';
+        when CREATED_END_DATE_LESS_THAN_SYS_EX then
+            dbms_output.put_line('[ERROR] CreatedEndDate cannot be less the current date');
+            RETURN 'NO';
+        when ACTUAL_START_DATE_LESS_THAN_SYS_EX then
+            dbms_output.put_line('[ERROR] ActualStartDate cannot be less the current date');
+            RETURN 'NO';
+        when ACTUAL_START_DATE_SMALLER_EX then
+            dbms_output.put_line('[ERROR] ActualStartDate cannot be less the ActualEndDate');
+            RETURN 'NO';
+        when ACTUAL_END_DATE_LESS_THAN_SYS_EX then
+            dbms_output.put_line('[ERROR] ActualEndDate cannot be less the current date');
             RETURN 'NO';
         when others then
             RETURN 'NO';
