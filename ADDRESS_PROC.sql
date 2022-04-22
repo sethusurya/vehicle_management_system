@@ -117,6 +117,7 @@ create or replace PACKAGE BODY PKG_ADDRESS   AS
         FAILURE_EX EXCEPTION;
         FOREIGN_KEY_CITY_ID CITY.CITY_ID%TYPE;
         FOREIGN_KEY_STATE_ID STATE.STATE_ID%TYPE;
+        FOREIGN_KEY_COUNTRY_ID COUNTRY.COUNTRY_ID%TYPE;
         EXITSTING_CITY_NAME NUMBER;
         EXISTING_STATE_NAME NUMBER;
         EXISTING_COUNTRY_NAME NUMBER;
@@ -134,10 +135,13 @@ create or replace PACKAGE BODY PKG_ADDRESS   AS
 
         -- check if country exists
         IF EXISTING_COUNTRY_NAME = 0 THEN
+            FOREIGN_KEY_COUNTRY_ID := 'COUNTRY_'||COUNTRY_ID_SEQ.NEXTVAL;
             INSERT INTO COUNTRY VALUES (
-                'COUNTRY_'||COUNTRY_ID_SEQ.NEXTVAL,
+                FOREIGN_KEY_COUNTRY_ID,
                 upper(trim(vCOUNTRY_NAME))
             );
+        else    
+            select COUNTRY_ID into FOREIGN_KEY_COUNTRY_ID from COUNTRY where COUNTRY_NAME = vCOUNTRY_NAME;
         END IF;
 
         -- check if state exists
@@ -146,8 +150,10 @@ create or replace PACKAGE BODY PKG_ADDRESS   AS
             INSERT INTO STATE VALUES (
                 FOREIGN_KEY_STATE_ID,
                 upper(trim(vSTATE_NAME)),
-                upper(trim(vCOUNTRY_NAME))
+                FOREIGN_KEY_COUNTRY_ID
             );
+        ELSE
+            select STATE_ID into FOREIGN_KEY_STATE_ID from STATE where STATE_NAME = vSTATE_NAME;
         END IF;
 
         -- check if city exists
@@ -155,6 +161,7 @@ create or replace PACKAGE BODY PKG_ADDRESS   AS
             select CITY_ID into FOREIGN_KEY_CITY_ID from CITY where CITY_NAME = vCITY_NAME;
         else
             FOREIGN_KEY_CITY_ID := 'CITY_'||CITY_ID_SEQ.NEXTVAL;
+            dbms_output.put_line('KEY'||FOREIGN_KEY_STATE_ID);
             INSERT INTO CITY VALUES (
                  FOREIGN_KEY_CITY_ID,
                  upper(trim(vCITY_NAME)),
