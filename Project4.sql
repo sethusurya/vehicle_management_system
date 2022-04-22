@@ -48,7 +48,7 @@
   ALTER TABLE ADDRESS   MODIFY (  ADDRESS_LINE_1   CONSTRAINT ADDRESS_LINE_1_NOT_NULL   NOT NULL ENABLE);
   ALTER TABLE ADDRESS   MODIFY (  ZIP_CODE   CONSTRAINT ZIP_CODE_NOT_NULL   NOT NULL ENABLE);
   ALTER TABLE ADDRESS   MODIFY (  CITY_ID   CONSTRAINT CITY_ID_NOT_NULL   NOT NULL ENABLE);
-  
+  97B38C4960*694DE2BD2
 
 ************************************************************
 
@@ -65,6 +65,19 @@
         vCOMMENTS IN BOOKING.COMMENTS%type	
     ) RETURN VARCHAR2;
 	
+    PROCEDURE INSERT_BOOKING(
+        vBOOKING_ID IN BOOKING.BOOKING_ID%type,
+        vBOOKING_STATUS IN BOOKING.BOOKING_STATUS%type,
+        vCREATED_START_DATE IN BOOKING.CREATED_START_DATE%type,
+        vCREATED_END_DATE IN BOOKING.CREATED_END_DATE%type,
+        vACTUAL_START_DATE IN BOOKING.ACTUAL_START_DATE%type,
+        vACTUAL_END_DATE IN BOOKING.ACTUAL_END_DATE%type,
+        vCOMMENTS IN BOOKING.COMMENTS%type
+        vUSER_ID IN BOOKING.USER_ID%type
+        vLISTING_ID IN BOOKING.LISTING_ID%type
+        vTRANSACTION_ID IN BOOKING.TRANSACTION_ID%type
+    );
+
 	 FUNCTION COMPARE_TIMESTAMP(
         VTIME_ONE IN TIMESTAMP,
         VTIMESTAMP_TWO IN TIMESTAMP
@@ -88,7 +101,7 @@ END PKG_ADDRESS;
 ************************************************************
 
  --CREATE PACKAGE BODY
- CREATE OR REPLACE EDITIONABLE PACKAGE BODY PKG_BOOKING   AS
+create or replace PACKAGE BODY PKG_BOOKING   AS
 
   FUNCTION BODY_BOOKING(
         vBOOKING_ID IN BOOKING.BOOKING_ID%type,
@@ -114,70 +127,69 @@ END PKG_ADDRESS;
 			ACTUAL_START_DATE_LESS_THAN_SYS_EX EXCEPTION;
 			ACTUAL_START_DATE_SMALLER_EX EXCEPTION;
 			ACTUAL_END_DATE_LESS_THAN_SYS_EX EXCEPTION;
-			
-        
+
+
     BEGIN
-        
 		-- CHECK IF BOOKING STATUS IS BLACK OR NULL
         if vBOOKING_STATUS is NULL or LENGTH(trim(vBOOKING_STATUS)) IS NULL then
             raise INVALID_BOOKING_EX;
         end if;
-		
+
 		-- CHECK IF BOOKING STATUS IS VALID
-        if NOT UPPER(vBOOKING_STATUS) = 'COMPLETED' OR NOT UPPER(vBOOKING_STATUS) = 'IN-PROGRESS' OR NOT UPPER(vBOOKING_STATUS) = 'OPEN' then
+        if UPPER(vBOOKING_STATUS) != 'COMPLETED' AND UPPER(vBOOKING_STATUS) != 'IN-PROGRESS' AND UPPER(vBOOKING_STATUS) != 'OPEN' then
             raise INVALID_BOOKING_VAL_EX;
         end if;
-		
+
 		-- CHECK IF CREATED_START_DATE IS BLANK OR NULL
 		if vCREATED_START_DATE is NULL or to_char(LENGTH(vCREATED_START_DATE)) is NULL then
             raise CREATED_START_DATE_EX;
         end if;
-		
+
 		-- CHECK IF CREATED_END_DATE IS BLANK OR NULL
 		if vCREATED_END_DATE is NULL or to_char(LENGTH(vCREATED_END_DATE)) is NULL then
             raise CREATED_END_DATE_EX;
         end if;
-		
+
 		-- CHECK IF ACTUAL_START_DATE IS BLANK OR NULL		
 		if vACTUAL_START_DATE is NULL or to_char(LENGTH(vACTUAL_START_DATE)) is NULL then
             raise ACTUAL_START_DATE_EX;
         end if;
-		
+
 		-- CHECK IF ACTUAL_END_DATE IS BLANK OR NULL	
 		if vACTUAL_END_DATE is NULL or to_char(LENGTH(vACTUAL_END_DATE)) is NULL then
             raise ACTUAL_END_DATE_EX;
         end if;
-                
+
 		-- CHECK IF CREATED_START_DATE IS GREATER THAN CURRENT_DATE
 		if COMPARE_TIMESTAMP(vCREATED_START_DATE, SYSTIMESTAMP ) < 0 then
             raise CREATED_START_DATE_LESS_THAN_SYS_EX;
         end if;
-        
+
 		-- CHECK IF CREATED_START_DATE IS LESS THAN CREATED_END_DATE
 		if COMPARE_TIMESTAMP(vCREATED_END_DATE, vCREATED_START_DATE ) < 0 then
             raise CREATED_START_DATE_SMALLER_EX;
         end if;
-        
+
 		-- CHECK IF CREATED_END_DATE IS GREATER THAN CURRENT_DATE
 		if COMPARE_TIMESTAMP(vCREATED_END_DATE, SYSTIMESTAMP ) < 0 then
             raise CREATED_END_DATE_LESS_THAN_SYS_EX;
         end if;
-        
+
 		-- CHECK IF ACTUAL_START_DATE IS GREATER THAN CURRENT_DATE
 		if COMPARE_TIMESTAMP(vACTUAL_START_DATE, SYSTIMESTAMP ) < 0 then
             raise ACTUAL_START_DATE_LESS_THAN_SYS_EX;
         end if;
-        
+
 		-- CHECK IF ACTUAL_START_DATE IS LESS THAN ACTUAL_END_DATE
 		if COMPARE_TIMESTAMP(vACTUAL_END_DATE, vACTUAL_START_DATE ) < 0 then
             raise ACTUAL_START_DATE_SMALLER_EX;
         end if;
-        
+
 		-- CHECK IF ACTUAL_END_DATE IS GREATER THAN CURRENT_DATE
 		if COMPARE_TIMESTAMP(vACTUAL_END_DATE, SYSTIMESTAMP ) < 0 then
             raise ACTUAL_END_DATE_LESS_THAN_SYS_EX;
 		end if;
-        
+
         begin
              select BOOKING_ID into EXISTING_BOOKING from BOOKING where BOOKING_ID = vBOOKING_ID;
              if EXISTING_BOOKING is NOT NULL then
@@ -189,13 +201,14 @@ END PKG_ADDRESS;
             when NO_DATA_FOUND then
                 return 'YES';
         end;
-        
+
         RETURN 'YES';
     EXCEPTION
         when INVALID_BOOKING_EX then
             dbms_output.put_line('[ERROR] Invalid Booking Type, Booking Type cannot be NULL or Empty');
             RETURN 'NO';
         when INVALID_BOOKING_VAL_EX then
+            dbms_output.enable(10000);
             dbms_output.put_line('[ERROR] Invalid Booking Type, allowed values are ''COMPLETED'', ''IN-PROGRESS'',''OPEN''');
             RETURN 'NO';
         when CREATED_START_DATE_EX then
@@ -234,12 +247,12 @@ END PKG_ADDRESS;
         when others then
             RETURN 'NO';
   END BODY_BOOKING;
-  
+
  	 FUNCTION COMPARE_TIMESTAMP(
         VTIME_ONE IN TIMESTAMP,
         VTIMESTAMP_TWO IN TIMESTAMP
     ) RETURN VARCHAR2 AS
-	
+
 	begin
 	  return extract (day    from (VTIME_ONE-VTIMESTAMP_TWO))*24*60*60 +
 			 extract (hour   from (VTIME_ONE-VTIMESTAMP_TWO))*60*60+
@@ -252,7 +265,7 @@ END PKG_BOOKING;
 ************************************************************
 
  --CREATE PACKAGE BODY
- CREATE OR REPLACE EDITIONABLE PACKAGE BODY PKG_ADDRESS   AS
+create or replace PACKAGE BODY PKG_ADDRESS   AS
 
   FUNCTION ADDRESS_VALIDATION(
         vADDRESS_LINE_1 IN ADDRESS.ADDRESS_LINE_1%type,
@@ -261,56 +274,79 @@ END PKG_BOOKING;
     ) RETURN VARCHAR2 AS
 
 			ZIPCODE_LENGTH NUMBER;
+            ADDR1_LENGTH NUMBER;
+            ADDR2_LENGTH NUMBER;
 			INVALID_ADDR1_EX EXCEPTION;
 			INVALID_ZIP_CODE_EX EXCEPTION;
 			ZIP_CODE_NAN_EX EXCEPTION;
 			ZIPCODE_LENGTH_EX EXCEPTION;
-        
+            ADDR1_LENGTH_EX EXCEPTION;
+            ADDR2_LENGTH_EX EXCEPTION;
+
     BEGIN
-        
+
 		EXECUTE IMMEDIATE ('SELECT LENGTH(''' ||vZIP_CODE|| ''') FROM DUAL') INTO ZIPCODE_LENGTH;
-		
+        EXECUTE IMMEDIATE ('SELECT LENGTH(''' ||vADDRESS_LINE_1|| ''') FROM DUAL') INTO ADDR1_LENGTH;
+
+        IF(NOT vADDRESS_LINE_1 is NULL or NOT LENGTH(trim(vADDRESS_LINE_1)) IS NULL) THEN
+            EXECUTE IMMEDIATE ('SELECT LENGTH(''' ||vADDRESS_LINE_2|| ''') FROM DUAL') INTO ADDR2_LENGTH;
+        END IF;
+
 		-- CHECK IF BOOKING STATUS IS BLACK OR NULL
         if vADDRESS_LINE_1 is NULL or LENGTH(trim(vADDRESS_LINE_1)) IS NULL then
             raise INVALID_ADDR1_EX;
         end if;
-		
+
+        IF(NOT vADDRESS_LINE_2 = NULL AND NOT LENGTH(TRIM(vADDRESS_LINE_2)) IS NULL AND ADDR2_LENGTH > 50) THEN
+			RAISE ADDR2_LENGTH_EX;
+		END IF;
+        
+        IF(ADDR1_LENGTH > 50) THEN
+			RAISE ADDR1_LENGTH_EX;
+		END IF;
+
 		-- CHECK IF BOOKING STATUS IS BLACK OR NULL
         if vZIP_CODE is NULL or LENGTH(trim(vZIP_CODE)) IS NULL then
             raise INVALID_ZIP_CODE_EX;
         end if;
-		
+
 		-- CHECK IF BOOKING STATUS IS BLACK OR NULL
         if vZIP_CODE = 0 then
             raise INVALID_ZIP_CODE_EX;
         end if;
-		
+
 		-- CHECK IF BOOKING STATUS IS BLACK OR NULL
         if ZIPCODE_LENGTH <> 5 then
             raise ZIPCODE_LENGTH_EX;
         end if;
 
 		-- CHECK IF DEPT_NAME IS NOT A NUMBER 
-		IF(NOT VALIDATE_CONVERSION(vZIP_CODE AS NUMBER) = 1) THEN 
+		IF(NOT VALIDATE_CONVERSION(vZIP_CODE AS NUMBER) != 1) THEN 
 			RAISE ZIP_CODE_NAN_EX;
 		END IF;
-		
+
         RETURN 'YES';
     EXCEPTION
         when INVALID_ADDR1_EX then
             dbms_output.put_line('[ERROR] Invalid Address, Address Line 1 is mandatory');
-            RETURN 'NO';
+            RETURN 'NO1';
         when INVALID_ZIP_CODE_EX then
             dbms_output.put_line('[ERROR] Invalid ZipCode, ZipCode is mandatory');
-            RETURN 'NO';
+            RETURN 'NO2';
         when ZIP_CODE_NAN_EX then
             dbms_output.put_line('[ERROR] ZipCode need to be a valid number');
-            RETURN 'NO';
+            RETURN 'NO3';
         when ZIPCODE_LENGTH_EX then
             dbms_output.put_line('[ERROR] Invalid ZipCode, ZipCode should not contain more than 5 digits');
-            RETURN 'NO';
+            RETURN 'NO4';
+        when ADDR1_LENGTH_EX then
+            dbms_output.put_line('[ERROR] Invalid Address 1, maximum 50 characters are allowed');
+            RETURN 'NO5';
+        when ADDR2_LENGTH_EX then
+            dbms_output.put_line('[ERROR] Invalid Address 2, maximum 50 characters are allowed');
+            RETURN 'NO6';
         when others then
-            RETURN 'NO';
+            RETURN 'NO7';
   END ADDRESS_VALIDATION;
 
 END PKG_ADDRESS;
