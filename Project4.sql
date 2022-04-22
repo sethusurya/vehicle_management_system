@@ -65,18 +65,18 @@
         vCOMMENTS IN BOOKING.COMMENTS%type	
     ) RETURN VARCHAR2;
 	
-    PROCEDURE INSERT_BOOKING(
-        vBOOKING_ID IN BOOKING.BOOKING_ID%type,
-        vBOOKING_STATUS IN BOOKING.BOOKING_STATUS%type,
-        vCREATED_START_DATE IN BOOKING.CREATED_START_DATE%type,
-        vCREATED_END_DATE IN BOOKING.CREATED_END_DATE%type,
-        vACTUAL_START_DATE IN BOOKING.ACTUAL_START_DATE%type,
-        vACTUAL_END_DATE IN BOOKING.ACTUAL_END_DATE%type,
-        vCOMMENTS IN BOOKING.COMMENTS%type
-        vUSER_ID IN BOOKING.USER_ID%type
-        vLISTING_ID IN BOOKING.LISTING_ID%type
-        vTRANSACTION_ID IN BOOKING.TRANSACTION_ID%type
-    );
+    -- PROCEDURE INSERT_BOOKING(
+    --     vBOOKING_ID IN BOOKING.BOOKING_ID%type,
+    --     vBOOKING_STATUS IN BOOKING.BOOKING_STATUS%type,
+    --     vCREATED_START_DATE IN BOOKING.CREATED_START_DATE%type,
+    --     vCREATED_END_DATE IN BOOKING.CREATED_END_DATE%type,
+    --     vACTUAL_START_DATE IN BOOKING.ACTUAL_START_DATE%type,
+    --     vACTUAL_END_DATE IN BOOKING.ACTUAL_END_DATE%type,
+    --     vCOMMENTS IN BOOKING.COMMENTS%type
+    --     vUSER_ID IN BOOKING.USER_ID%type
+    --     vLISTING_ID IN BOOKING.LISTING_ID%type
+    --     vTRANSACTION_ID IN BOOKING.TRANSACTION_ID%type
+    -- );
 
 	 FUNCTION COMPARE_TIMESTAMP(
         VTIME_ONE IN TIMESTAMP,
@@ -97,14 +97,20 @@ END PKG_BOOKING;
     FUNCTION ADDRESS_VALIDATION(
         vADDRESS_LINE_1 IN ADDRESS.ADDRESS_LINE_1%type,
         vADDRESS_LINE_2 IN ADDRESS.ADDRESS_LINE_2%type,
-        vZIP_CODE IN ADDRESS.ZIP_CODE%type
+        vZIP_CODE IN ADDRESS.ZIPCODE%type
     ) RETURN VARCHAR2;
+
+    PROCEDURE INSERT_ADDRESS(
+        vADDRESS_LINE_1 IN ADDRESS.ADDRESS_LINE_1%type,
+        vADDRESS_LINE_2 IN ADDRESS.ADDRESS_LINE_2%type,
+        vZIP_CODE IN ADDRESS.ZIPCODE%type,
+        vCITY_ID IN NUMBER
+    );
 	
 END PKG_ADDRESS;
 
 ************************************************************
 
- --CREATE PACKAGE BODY
  --CREATE PACKAGE BODY
 create or replace PACKAGE BODY PKG_BOOKING   AS
 
@@ -307,7 +313,7 @@ create or replace PACKAGE BODY PKG_ADDRESS   AS
   FUNCTION ADDRESS_VALIDATION(
         vADDRESS_LINE_1 IN ADDRESS.ADDRESS_LINE_1%type,
         vADDRESS_LINE_2 IN ADDRESS.ADDRESS_LINE_2%type,
-        vZIP_CODE IN ADDRESS.ZIP_CODE%type
+        vZIP_CODE IN ADDRESS.ZIPCODE%type
     ) RETURN VARCHAR2 AS
 
 			ZIPCODE_LENGTH NUMBER;
@@ -385,5 +391,44 @@ create or replace PACKAGE BODY PKG_ADDRESS   AS
         when others then
             RETURN 'NO';
   END ADDRESS_VALIDATION;
+
+    PROCEDURE INSERT_ADDRESS(
+        vADDRESS_LINE_1 IN ADDRESS.ADDRESS_LINE_1%type,
+        vADDRESS_LINE_2 IN ADDRESS.ADDRESS_LINE_2%type,
+        vZIP_CODE IN ADDRESS.ZIPCODE%type,
+        vCITY_ID IN NUMBER
+    ) AS
+    
+        INVALID_INPUT_EX EXCEPTION;
+        FAILURE_EX EXCEPTION;
+
+    BEGIN
+        IF ADDRESS_VALIDATION(vADDRESS_LINE_1, vADDRESS_LINE_2, vZIP_CODE) = 'NO' THEN
+            RAISE INVALID_INPUT_EX;
+        END IF;
+
+        INSERT INTO ADDRESS VALUES(
+            ADDRESS_ID_SEQ.NEXTVAL,
+            vADDRESS_LINE_1,
+            vADDRESS_LINE_2,
+            vZIP_CODE,
+            vCITY_ID
+        );
+
+    if SQL%ROWCOUNT != 1 then
+        rollback;
+        raise FAILURE_EX;
+    else 
+        dbms_output.put_line('Address Record Inserted Successfully');
+    end if;
+    commit;
+
+    EXCEPTION
+    when INVALID_INPUT_EX then
+        dbms_output.put_line('Invalid Input');
+    when FAILURE_EX then
+        dbms_output.put_line('Violations, Record Could Not Be Inserted');
+
+    END;
 
 END PKG_ADDRESS;
