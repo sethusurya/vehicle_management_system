@@ -10,7 +10,9 @@
         vADDRESS_LINE_1 IN ADDRESS.ADDRESS_LINE_1%type,
         vADDRESS_LINE_2 IN ADDRESS.ADDRESS_LINE_2%type,
         vZIP_CODE IN ADDRESS.ZIPCODE%type,
-        vCITY_ID IN NUMBER
+        vCITY_NAME IN CITY.CITY_NAME%TYPE,
+        vSTATE_NAME IN STATE.STATE_NAME%TYPE,
+        vCOUNTRY_NAME IN COUNTRY.COUNTRY_NAME%TYPE 
     );
 	
 END PKG_ADDRESS;
@@ -53,7 +55,7 @@ create or replace PACKAGE BODY PKG_ADDRESS   AS
         IF(NOT vADDRESS_LINE_2 = NULL AND NOT LENGTH(TRIM(vADDRESS_LINE_2)) IS NULL AND ADDR2_LENGTH > 50) THEN
 			RAISE ADDR2_LENGTH_EX;
 		END IF;
-        
+
         IF(ADDR1_LENGTH > 50) THEN
 			RAISE ADDR1_LENGTH_EX;
 		END IF;
@@ -74,7 +76,7 @@ create or replace PACKAGE BODY PKG_ADDRESS   AS
         end if;
 
 		-- CHECK IF DEPT_NAME IS NOT A NUMBER 
-		IF(NOT VALIDATE_CONVERSION(vZIP_CODE AS NUMBER) != 1) THEN 
+		IF(NOT VALIDATE_CONVERSION(vZIP_CODE AS NUMBER) = 1) THEN 
 			RAISE ZIP_CODE_NAN_EX;
 		END IF;
 
@@ -106,23 +108,66 @@ create or replace PACKAGE BODY PKG_ADDRESS   AS
         vADDRESS_LINE_1 IN ADDRESS.ADDRESS_LINE_1%type,
         vADDRESS_LINE_2 IN ADDRESS.ADDRESS_LINE_2%type,
         vZIP_CODE IN ADDRESS.ZIPCODE%type,
-        vCITY_ID IN NUMBER
+        vCITY_NAME IN CITY.CITY_NAME%TYPE,
+        vSTATE_NAME IN STATE.STATE_NAME%TYPE,
+        vCOUNTRY_NAME IN COUNTRY.COUNTRY_NAME%TYPE 
     ) AS
-    
+
         INVALID_INPUT_EX EXCEPTION;
         FAILURE_EX EXCEPTION;
+        FOREIGN_KEY_CITY_ID CITY.CITY_ID%TYPE;
+        FOREIGN_KEY_STATE_ID STATE.STATE_ID%TYPE;
+        EXITSTING_CITY_NAME NUMBER;
+        EXISTING_STATE_NAME NUMBER;
+        EXISTING_COUNTRY_NAME NUMBER;
 
     BEGIN
+
+        SELECT COUNT(*) INTO EXITSTING_CITY_NAME FROM CITY WHERE CITY_NAME=vCITY_NAME;
+        SELECT COUNT(*) INTO EXISTING_STATE_NAME FROM STATE WHERE STATE_NAME=vSTATE_NAME;
+        SELECT COUNT(*) INTO EXISTING_COUNTRY_NAME FROM COUNTRY WHERE COUNTRY_NAME=vCOUNTRY_NAME;
+
+        -- validate address
         IF ADDRESS_VALIDATION(vADDRESS_LINE_1, vADDRESS_LINE_2, vZIP_CODE) = 'NO' THEN
             RAISE INVALID_INPUT_EX;
         END IF;
 
+        -- check if country exists
+        IF EXISTING_COUNTRY_NAME = 0 THEN
+            INSERT INTO COUNTRY VALUES (
+                'COUNTRY_'||COUNTRY_ID_SEQ.NEXTVAL,
+                upper(trim(vCOUNTRY_NAME))
+            );
+        END IF;
+
+        -- check if state exists
+        IF EXISTING_STATE_NAME = 0 THEN
+            FOREIGN_KEY_STATE_ID := 'STATE_'||STATE_ID_SEQ.NEXTVAL;
+            INSERT INTO STATE VALUES (
+                FOREIGN_KEY_STATE_ID,
+                upper(trim(vSTATE_NAME)),
+                upper(trim(vCOUNTRY_NAME))
+            );
+        END IF;
+
+        -- check if city exists
+        IF NOT EXITSTING_CITY_NAME = 0 THEN
+            select CITY_ID into FOREIGN_KEY_CITY_ID from CITY where CITY_NAME = vCITY_NAME;
+        else
+            FOREIGN_KEY_CITY_ID := 'CITY_'||CITY_ID_SEQ.NEXTVAL;
+            INSERT INTO CITY VALUES (
+                 FOREIGN_KEY_CITY_ID,
+                 upper(trim(vCITY_NAME)),
+                 FOREIGN_KEY_STATE_ID
+            );
+        END IF;
+
         INSERT INTO ADDRESS VALUES(
-            ADDRESS_ID_SEQ.NEXTVAL,
-            vADDRESS_LINE_1,
-            vADDRESS_LINE_2,
-            vZIP_CODE,
-            vCITY_ID
+            'ADDR_'||ADDRESS_ID_SEQ.NEXTVAL,
+            UPPER(TRIM(vADDRESS_LINE_1)),
+            UPPER(TRIM(vADDRESS_LINE_2)),
+            TRIM(vZIP_CODE),
+            FOREIGN_KEY_CITY_ID
         );
 
     if SQL%ROWCOUNT != 1 then
