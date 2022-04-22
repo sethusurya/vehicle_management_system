@@ -82,6 +82,10 @@
         VTIME_ONE IN TIMESTAMP,
         VTIMESTAMP_TWO IN TIMESTAMP
     ) RETURN VARCHAR2;
+
+    FUNCTION VALIDATE_TIMESTAMP(
+        VTIME IN TIMESTAMP
+    ) RETURN VARCHAR2;
         
 END PKG_BOOKING;
 
@@ -100,6 +104,7 @@ END PKG_ADDRESS;
 
 ************************************************************
 
+ --CREATE PACKAGE BODY
  --CREATE PACKAGE BODY
 create or replace PACKAGE BODY PKG_BOOKING   AS
 
@@ -127,6 +132,10 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
 			ACTUAL_START_DATE_LESS_THAN_SYS_EX EXCEPTION;
 			ACTUAL_START_DATE_SMALLER_EX EXCEPTION;
 			ACTUAL_END_DATE_LESS_THAN_SYS_EX EXCEPTION;
+			INVALID_CREATED_START_DATE_FORMAT EXCEPTION;
+			INVALID_CREATED_END_DATE_FORMAT EXCEPTION;
+			INVALID_ACTUAL_START_DATE_FORMAT EXCEPTION;
+			INVALID_ACTUAL_END_DATE_FORMAT EXCEPTION;
 
 
     BEGIN
@@ -159,6 +168,22 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
 		if vACTUAL_END_DATE is NULL or to_char(LENGTH(vACTUAL_END_DATE)) is NULL then
             raise ACTUAL_END_DATE_EX;
         end if;
+		
+		if NOT REGEXP_LIKE(vCREATED_START_DATE, '[0-9]{2}-[0-9]{2}-[0-9]{2} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,7} [AaPp][Mm]') then
+            raise INVALID_CREATED_START_DATE_FORMAT;
+        end if;	
+		
+		if NOT REGEXP_LIKE(vCREATED_END_DATE, '[0-9]{2}-[0-9]{2}-[0-9]{2} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,7} [AaPp][Mm]') then
+            raise INVALID_CREATED_END_DATE_FORMAT;
+        end if;	
+		
+		if NOT REGEXP_LIKE(vACTUAL_START_DATE, '[0-9]{2}-[0-9]{2}-[0-9]{2} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,7} [AaPp][Mm]') then
+            raise INVALID_ACTUAL_START_DATE_FORMAT;
+        end if;	
+		
+		if NOT REGEXP_LIKE(vACTUAL_END_DATE, '[0-9]{2}-[0-9]{2}-[0-9]{2} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,7} [AaPp][Mm]') then
+            raise INVALID_ACTUAL_END_DATE_FORMAT;
+        end if;	
 
 		-- CHECK IF CREATED_START_DATE IS GREATER THAN CURRENT_DATE
 		if COMPARE_TIMESTAMP(vCREATED_START_DATE, SYSTIMESTAMP ) < 0 then
@@ -243,6 +268,18 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
             RETURN 'NO';
         when ACTUAL_END_DATE_LESS_THAN_SYS_EX then
             dbms_output.put_line('[ERROR] ActualEndDate cannot be less the current date');
+            RETURN 'NO';
+        when INVALID_CREATED_START_DATE_FORMAT then
+            dbms_output.put_line('[ERROR] CreatedStartDate has an Invalid format');
+            RETURN 'NO';
+        when INVALID_CREATED_END_DATE_FORMAT then
+            dbms_output.put_line('[ERROR] CreatedEndDate has an Invalid format');
+            RETURN 'NO';
+        when INVALID_ACTUAL_START_DATE_FORMAT then
+            dbms_output.put_line('[ERROR] ActualStartDate has an Invalid format');
+            RETURN 'NO';
+        when INVALID_ACTUAL_END_DATE_FORMAT then
+            dbms_output.put_line('[ERROR] ActualEndDate has an Invalid format');
             RETURN 'NO';
         when others then
             RETURN 'NO';
@@ -329,24 +366,24 @@ create or replace PACKAGE BODY PKG_ADDRESS   AS
     EXCEPTION
         when INVALID_ADDR1_EX then
             dbms_output.put_line('[ERROR] Invalid Address, Address Line 1 is mandatory');
-            RETURN 'NO1';
+            RETURN 'NO';
         when INVALID_ZIP_CODE_EX then
             dbms_output.put_line('[ERROR] Invalid ZipCode, ZipCode is mandatory');
-            RETURN 'NO2';
+            RETURN 'NO';
         when ZIP_CODE_NAN_EX then
             dbms_output.put_line('[ERROR] ZipCode need to be a valid number');
-            RETURN 'NO3';
+            RETURN 'NO';
         when ZIPCODE_LENGTH_EX then
             dbms_output.put_line('[ERROR] Invalid ZipCode, ZipCode should not contain more than 5 digits');
-            RETURN 'NO4';
+            RETURN 'NO';
         when ADDR1_LENGTH_EX then
             dbms_output.put_line('[ERROR] Invalid Address 1, maximum 50 characters are allowed');
-            RETURN 'NO5';
+            RETURN 'NO';
         when ADDR2_LENGTH_EX then
             dbms_output.put_line('[ERROR] Invalid Address 2, maximum 50 characters are allowed');
-            RETURN 'NO6';
+            RETURN 'NO';
         when others then
-            RETURN 'NO7';
+            RETURN 'NO';
   END ADDRESS_VALIDATION;
 
 END PKG_ADDRESS;
