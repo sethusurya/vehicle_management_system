@@ -121,6 +121,9 @@ create or replace PACKAGE BODY PKG_ADDRESS   AS
         EXITSTING_CITY_NAME NUMBER;
         EXISTING_STATE_NAME NUMBER;
         EXISTING_COUNTRY_NAME NUMBER;
+        INVALID_CITY_EX EXCEPTION;
+        INVALID_STATE_EX EXCEPTION;
+        INVALID_COUNTRY_EX EXCEPTION;
 
     BEGIN
 
@@ -136,6 +139,12 @@ create or replace PACKAGE BODY PKG_ADDRESS   AS
         -- check if country exists
         IF EXISTING_COUNTRY_NAME = 0 THEN
             FOREIGN_KEY_COUNTRY_ID := 'COUNTRY_'||COUNTRY_ID_SEQ.NEXTVAL;
+            
+            -- COUNTRY DATA VALIDATION
+            IF CHECK_COUNTRY(UPPER(TRIM(vCOUNTRY_NAME))) = 'NO' THEN
+                RAISE INVALID_COUNTRY_EX;
+            END IF;
+            
             INSERT INTO COUNTRY VALUES (
                 FOREIGN_KEY_COUNTRY_ID,
                 upper(trim(vCOUNTRY_NAME))
@@ -147,6 +156,12 @@ create or replace PACKAGE BODY PKG_ADDRESS   AS
         -- check if state exists
         IF EXISTING_STATE_NAME = 0 THEN
             FOREIGN_KEY_STATE_ID := 'STATE_'||STATE_ID_SEQ.NEXTVAL;
+            
+            -- STATE DATA VALIDATION
+            IF STATE_CHECK(FOREIGN_KEY_STATE_ID,UPPER(TRIM(vSTATE_NAME)),FOREIGN_KEY_COUNTRY_ID) = 'NO' THEN
+                RAISE INVALID_STATE_EX;
+            END IF;
+            
             INSERT INTO STATE VALUES (
                 FOREIGN_KEY_STATE_ID,
                 upper(trim(vSTATE_NAME)),
@@ -161,7 +176,12 @@ create or replace PACKAGE BODY PKG_ADDRESS   AS
             select CITY_ID into FOREIGN_KEY_CITY_ID from CITY where CITY_NAME = vCITY_NAME;
         else
             FOREIGN_KEY_CITY_ID := 'CITY_'||CITY_ID_SEQ.NEXTVAL;
-            dbms_output.put_line('KEY'||FOREIGN_KEY_STATE_ID);
+            
+            -- CITY DATA VALIDATION
+            IF PCKG_CITY.CITY_CHECK(FOREIGN_KEY_CITY_ID,UPPER(TRIM(vCITY_NAME)),FOREIGN_KEY_STATE_ID) = 'NO' THEN
+                RAISE INVALID_CITY_EX;
+            END IF;
+            
             INSERT INTO CITY VALUES (
                  FOREIGN_KEY_CITY_ID,
                  upper(trim(vCITY_NAME)),
@@ -190,7 +210,12 @@ create or replace PACKAGE BODY PKG_ADDRESS   AS
         dbms_output.put_line('Invalid Input');
     when FAILURE_EX then
         dbms_output.put_line('Violations, Record Could Not Be Inserted');
-
+    when INVALID_CITY_EX then
+        dbms_output.put_line('Invalid City');
+    when INVALID_STATE_EX then
+        dbms_output.put_line('Invalid State');
+    when INVALID_COUNTRY_EX then
+        dbms_output.put_line('Invalid Country');
     END;
 
 END PKG_ADDRESS;
