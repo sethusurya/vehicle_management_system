@@ -16,12 +16,21 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_PARKING AS
     ex_INVALID_ADDRESS EXCEPTION;
     ex_EXISTS EXCEPTION;
     BEGIN
-        SELECT COUNT(*) INTO vCount FROM ADDRESS WHERE ADDRESS_ID = TRIM(vADDRESS_ID) and ADDRESS_TYPE = 'PARKING';
-        dbms_output.put_line(vCount);
+        BEGIN
+            SELECT COUNT(*) INTO vCount FROM ADDRESS WHERE ADDRESS_ID = TRIM(vADDRESS_ID) and ADDRESS_TYPE = 'PARKING';
+            EXCEPTION
+                WHEN NO_DATA_FOUND THEN
+                    vCount := 0;
+        END;
         IF vCount != 1 THEN
             RAISE ex_INVALID_ADDRESS;
         END IF;
-        SELECT COUNT(*) INTO vCount2 FROM PARKING WHERE ADDRESS_ID = vADDRESS_ID;
+        BEGIN
+            SELECT COUNT(*) INTO vCount2 FROM PARKING WHERE ADDRESS_ID = vADDRESS_ID;
+            EXCEPTION
+                WHEN NO_DATA_FOUND THEN
+                    vCount2 := 0;
+        END;
         IF vCount2 > 0 THEN
             RAISE ex_EXISTS;
         END IF;
