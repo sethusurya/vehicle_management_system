@@ -212,7 +212,7 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
         end if;
 
         begin
-            select Count(*) into ID_CHECK from ADDRESS where ADDRESS_ID = UPPER(vADDRESS_ID);
+            select Count(*) into ID_CHECK from ADDRESS where ADDRESS_ID = UPPER(vADDRESS_ID) AND ADDRESS_TYPE = 'PARKING';
              if(ID_CHECK = 0) then 
                 raise INVALID_ADDRESS_ID;
             end if;
