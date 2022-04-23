@@ -1,48 +1,58 @@
   --CREATE PACKAGE
-  CREATE OR REPLACE EDITIONABLE PACKAGE PKG_BOOKING   AS 
+create or replace PACKAGE PKG_BOOKING   AS 
     
-    FUNCTION BOOKING_VALIDATION(
-        vBOOKING_ID IN BOOKING.BOOKING_ID%type,
+    FUNCTION NEW_BOOKING_VALIDATION(
         vBOOKING_STATUS IN BOOKING.BOOKING_STATUS%type,
         vCREATED_START_DATE IN BOOKING.CREATED_START_DATE%type,
         vCREATED_END_DATE IN BOOKING.CREATED_END_DATE%type,
-        vACTUAL_START_DATE IN BOOKING.ACTUAL_START_DATE%type,
-        vACTUAL_END_DATE IN BOOKING.ACTUAL_END_DATE%type,
-        vCOMMENTS IN BOOKING.COMMENTS%type	
-    ) RETURN VARCHAR2;
-	
-    PROCEDURE INSERT_BOOKING(
-        vBOOKING_STATUS IN BOOKING.BOOKING_STATUS%type,
-        vCREATED_START_DATE IN BOOKING.CREATED_START_DATE%type,
-        vCREATED_END_DATE IN BOOKING.CREATED_END_DATE%type,
-        vACTUAL_START_DATE IN BOOKING.ACTUAL_START_DATE%type,
-        vACTUAL_END_DATE IN BOOKING.ACTUAL_END_DATE%type,
-        vCOMMENTS IN BOOKING.COMMENTS%type
-        vUSER_ID IN BOOKING.USER_ID%type
+        vUSER_ID IN BOOKING.USER_ID%type,
         vLISTING_ID IN BOOKING.LISTING_ID%type
-        vTRANSACTION_ID IN BOOKING.TRANSACTION_ID%type
+    ) RETURN VARCHAR2;
+
+    FUNCTION BOOKING_IN_PROGRESS_VALIDATION(
+        vBOOKING_ID IN BOOKING.BOOKING_ID%type
+    ) RETURN VARCHAR2;
+    
+    FUNCTION BOOKING_COMPLETED_VALIDATION(
+        vBOOKING_ID IN BOOKING.BOOKING_ID%type,
+        vLISTING_ID IN BOOKING.LISTING_ID%type
+    ) RETURN VARCHAR2;
+
+    PROCEDURE INSERT_NEW_BOOKING(
+        vBOOKING_STATUS IN BOOKING.BOOKING_STATUS%type,
+        vCREATED_START_DATE IN BOOKING.CREATED_START_DATE%type,
+        vCREATED_END_DATE IN BOOKING.CREATED_END_DATE%type,
+        vUSER_ID IN BOOKING.USER_ID%type,
+        vLISTING_ID IN BOOKING.LISTING_ID%type
+    );
+
+    PROCEDURE BOOKING_IN_PROGRESS(
+        vBOOKING_ID IN BOOKING.BOOKING_ID%type,
+        vLISTING_ID IN BOOKING.LISTING_ID%type
+    );
+    
+    PROCEDURE BOOKING_COMPLETED(
+        vBOOKING_ID IN BOOKING.BOOKING_ID%type,
+        vLISTING_ID IN BOOKING.LISTING_ID%type
     );
 
 	 FUNCTION COMPARE_TIMESTAMP(
         VTIME_ONE IN TIMESTAMP,
         VTIMESTAMP_TWO IN TIMESTAMP
     ) RETURN VARCHAR2;
-        
+
 END PKG_BOOKING;
 
 ************************************************************
 
- --CREATE PACKAGE BODY
 create or replace PACKAGE BODY PKG_BOOKING   AS
 
-    FUNCTION BOOKING_VALIDATION(
-            vBOOKING_ID IN BOOKING.BOOKING_ID%type,
+    FUNCTION NEW_BOOKING_VALIDATION(
             vBOOKING_STATUS IN BOOKING.BOOKING_STATUS%type,
-            vCREATED_START_DATE IN BOOKING.CREATED_START_DATE %type,
+            vCREATED_START_DATE IN BOOKING.CREATED_START_DATE%type,
             vCREATED_END_DATE IN BOOKING.CREATED_END_DATE%type,
-            vACTUAL_START_DATE IN BOOKING.ACTUAL_START_DATE%type,
-            vACTUAL_END_DATE IN BOOKING.ACTUAL_END_DATE%type,
-            vCOMMENTS IN BOOKING.COMMENTS%type	
+            vUSER_ID IN BOOKING.USER_ID%type,
+            vLISTING_ID IN BOOKING.LISTING_ID%type
         ) RETURN VARCHAR2 AS
 
                 EXISTING_BOOKING NUMBER;
@@ -50,8 +60,6 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
                 INVALID_BOOKING_VAL_EX EXCEPTION;
                 CREATED_START_DATE_EX EXCEPTION;
                 CREATED_END_DATE_EX EXCEPTION;
-                ACTUAL_START_DATE_EX EXCEPTION;
-                ACTUAL_END_DATE_EX EXCEPTION;
                 DUPLICATE_BOOKING_EX EXCEPTION;
                 CREATED_START_DATE_LESS_THAN_SYS_EX EXCEPTION;
                 CREATED_START_DATE_SMALLER_EX EXCEPTION;
@@ -61,14 +69,24 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
                 ACTUAL_END_DATE_LESS_THAN_SYS_EX EXCEPTION;
                 INVALID_CREATED_START_DATE_FORMAT EXCEPTION;
                 INVALID_CREATED_END_DATE_FORMAT EXCEPTION;
-                INVALID_ACTUAL_START_DATE_FORMAT EXCEPTION;
-                INVALID_ACTUAL_END_DATE_FORMAT EXCEPTION;
+                INVALID_USER_ID_EX EXCEPTION;
+                INVALID_LISTING_ID_EX EXCEPTION;
 
 
         BEGIN
-            -- CHECK IF BOOKING STATUS IS BLACK OR NULL
+            -- CHECK IF BOOKING STATUS IS BLANK OR NULL
             if vBOOKING_STATUS is NULL or LENGTH(trim(vBOOKING_STATUS)) IS NULL then
                 raise INVALID_BOOKING_EX;
+            end if;
+
+            -- CHECK IF USER ID IS BLANK OR NULL
+            if vUSER_ID is NULL or LENGTH(trim(vUSER_ID)) IS NULL then
+                raise INVALID_USER_ID_EX;
+            end if;
+
+            -- CHECK IF LISTING ID IS BLANK OR NULL
+            if vLISTING_ID is NULL or LENGTH(trim(vLISTING_ID)) IS NULL then
+                raise INVALID_LISTING_ID_EX;
             end if;
 
             -- CHECK IF BOOKING STATUS IS VALID
@@ -85,16 +103,6 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
             if vCREATED_END_DATE is NULL or to_char(LENGTH(vCREATED_END_DATE)) is NULL then
                 raise CREATED_END_DATE_EX;
             end if;
-
-            -- CHECK IF ACTUAL_START_DATE IS BLANK OR NULL		
-            if vACTUAL_START_DATE is NULL or to_char(LENGTH(vACTUAL_START_DATE)) is NULL then
-                raise ACTUAL_START_DATE_EX;
-            end if;
-
-            -- CHECK IF ACTUAL_END_DATE IS BLANK OR NULL	
-            if vACTUAL_END_DATE is NULL or to_char(LENGTH(vACTUAL_END_DATE)) is NULL then
-                raise ACTUAL_END_DATE_EX;
-            end if;
             
             if NOT REGEXP_LIKE(vCREATED_START_DATE, '[0-9]{2}-[0-9]{2}-[0-9]{2} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,7} [AaPp][Mm]') then
                 raise INVALID_CREATED_START_DATE_FORMAT;
@@ -102,14 +110,6 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
             
             if NOT REGEXP_LIKE(vCREATED_END_DATE, '[0-9]{2}-[0-9]{2}-[0-9]{2} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,7} [AaPp][Mm]') then
                 raise INVALID_CREATED_END_DATE_FORMAT;
-            end if;	
-            
-            if NOT REGEXP_LIKE(vACTUAL_START_DATE, '[0-9]{2}-[0-9]{2}-[0-9]{2} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,7} [AaPp][Mm]') then
-                raise INVALID_ACTUAL_START_DATE_FORMAT;
-            end if;	
-            
-            if NOT REGEXP_LIKE(vACTUAL_END_DATE, '[0-9]{2}-[0-9]{2}-[0-9]{2} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,7} [AaPp][Mm]') then
-                raise INVALID_ACTUAL_END_DATE_FORMAT;
             end if;	
 
             -- CHECK IF CREATED_START_DATE IS GREATER THAN CURRENT_DATE
@@ -127,33 +127,6 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
                 raise CREATED_END_DATE_LESS_THAN_SYS_EX;
             end if;
 
-            -- CHECK IF ACTUAL_START_DATE IS GREATER THAN CURRENT_DATE
-            if COMPARE_TIMESTAMP(vACTUAL_START_DATE, SYSTIMESTAMP ) < 0 then
-                raise ACTUAL_START_DATE_LESS_THAN_SYS_EX;
-            end if;
-
-            -- CHECK IF ACTUAL_START_DATE IS LESS THAN ACTUAL_END_DATE
-            if COMPARE_TIMESTAMP(vACTUAL_END_DATE, vACTUAL_START_DATE ) < 0 then
-                raise ACTUAL_START_DATE_SMALLER_EX;
-            end if;
-
-            -- CHECK IF ACTUAL_END_DATE IS GREATER THAN CURRENT_DATE
-            if COMPARE_TIMESTAMP(vACTUAL_END_DATE, SYSTIMESTAMP ) < 0 then
-                raise ACTUAL_END_DATE_LESS_THAN_SYS_EX;
-            end if;
-
-            begin
-                select BOOKING_ID into EXISTING_BOOKING from BOOKING where BOOKING_ID = vBOOKING_ID;
-                if EXISTING_BOOKING is NOT NULL then
-                    raise DUPLICATE_BOOKING_EX;
-                end if;
-            exception
-                when DUPLICATE_BOOKING_EX then
-                    raise DUPLICATE_BOOKING_EX;
-                when NO_DATA_FOUND then
-                    return 'YES';
-            end;
-
             RETURN 'YES';
         EXCEPTION
             when INVALID_BOOKING_EX then
@@ -169,12 +142,6 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
             when CREATED_END_DATE_EX then
                 dbms_output.put_line('[ERROR] Invalid Created End Date, Enter a valid Created End Date');
                 RETURN 'NO';
-            when ACTUAL_START_DATE_EX then
-                dbms_output.put_line('[ERROR] Invalid Actual Start Date, Enter a valid Created End Date');
-                RETURN 'NO';
-            when ACTUAL_END_DATE_EX then
-                dbms_output.put_line('[ERROR] Invalid Actual End Date, Enter a valid Created End Date');
-                RETURN 'NO';
             when DUPLICATE_BOOKING_EX then
                 dbms_output.put_line('[ERROR] Duplicate booking, booking with the same id already exists');
                 RETURN 'NO';
@@ -187,30 +154,119 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
             when CREATED_END_DATE_LESS_THAN_SYS_EX then
                 dbms_output.put_line('[ERROR] CreatedEndDate cannot be less the current date');
                 RETURN 'NO';
-            when ACTUAL_START_DATE_LESS_THAN_SYS_EX then
-                dbms_output.put_line('[ERROR] ActualStartDate cannot be less the current date');
-                RETURN 'NO';
-            when ACTUAL_START_DATE_SMALLER_EX then
-                dbms_output.put_line('[ERROR] ActualStartDate cannot be less the ActualEndDate');
-                RETURN 'NO';
-            when ACTUAL_END_DATE_LESS_THAN_SYS_EX then
-                dbms_output.put_line('[ERROR] ActualEndDate cannot be less the current date');
-                RETURN 'NO';
             when INVALID_CREATED_START_DATE_FORMAT then
                 dbms_output.put_line('[ERROR] CreatedStartDate has an Invalid format');
                 RETURN 'NO';
             when INVALID_CREATED_END_DATE_FORMAT then
                 dbms_output.put_line('[ERROR] CreatedEndDate has an Invalid format');
                 RETURN 'NO';
-            when INVALID_ACTUAL_START_DATE_FORMAT then
-                dbms_output.put_line('[ERROR] ActualStartDate has an Invalid format');
+            when INVALID_USER_ID_EX then
+                dbms_output.put_line('[ERROR] Invalid UserId');
                 RETURN 'NO';
-            when INVALID_ACTUAL_END_DATE_FORMAT then
-                dbms_output.put_line('[ERROR] ActualEndDate has an Invalid format');
+            when INVALID_LISTING_ID_EX then
+                dbms_output.put_line('[ERROR] Invalid ListingId');
                 RETURN 'NO';
             when others then
                 RETURN 'NO';
-    END BOOKING_VALIDATION;
+    END NEW_BOOKING_VALIDATION;
+
+    FUNCTION BOOKING_IN_PROGRESS_VALIDATION(
+            vBOOKING_ID IN BOOKING.BOOKING_ID%type
+        ) RETURN VARCHAR2 AS
+
+                BOOKING_STATUS_INPROG NUMBER;
+                BOOKING_STATUS_COMP NUMBER;
+                INVALID_BOOKING_ID_EX EXCEPTION;
+                BOOKING_INPROG_EX EXCEPTION;
+                BOOKING_COMP_EX EXCEPTION;
+
+        BEGIN
+            SELECT COUNT(*) INTO BOOKING_STATUS_INPROG FROM BOOKING WHERE BOOKING_STATUS='IN-PROGRESS';
+            SELECT COUNT(*) INTO BOOKING_STATUS_COMP FROM BOOKING WHERE BOOKING_STATUS='COMPLETED';
+
+            -- CHECK IF BOOKING ID IS BLANK OR NULL
+            if vBOOKING_ID is NULL or LENGTH(trim(vBOOKING_ID)) IS NULL then
+                raise INVALID_BOOKING_ID_EX;
+            end if;
+
+            -- CHECK IF BOOKING IS ALREADY IN PROGRESS
+            if BOOKING_STATUS_INPROG > 0 then
+                raise BOOKING_INPROG_EX;
+            end if;
+
+            -- CHECK IF BOOKING IS ALREADY COMPLETED
+            if BOOKING_STATUS_COMP > 0 then
+                raise BOOKING_COMP_EX;
+            end if;
+
+            RETURN 'YES';
+        EXCEPTION
+            when INVALID_BOOKING_ID_EX then
+                dbms_output.put_line('[ERROR] Invalid Booking ID, Booking ID cannot be NULL or Empty');
+                RETURN 'NO';
+            when BOOKING_INPROG_EX then
+                dbms_output.put_line('[ERROR] This booking is already IN_PROGRESS');
+                RETURN 'NO';
+            when BOOKING_COMP_EX then
+                dbms_output.put_line('[ERROR] This booking has been completed');
+                RETURN 'NO';
+            when others then
+                RETURN 'NO';
+    END BOOKING_IN_PROGRESS_VALIDATION;
+    
+    FUNCTION BOOKING_COMPLETED_VALIDATION(
+            vBOOKING_ID IN BOOKING.BOOKING_ID%type,
+            vLISTING_ID IN BOOKING.LISTING_ID%type
+        ) RETURN VARCHAR2 AS
+
+                BOOKING_STATUS_INITIAL NUMBER;
+                BOOKING_STATUS_COMP NUMBER;
+                INVALID_BOOKING_ID_EX EXCEPTION;
+                BOOKING_INITIAL_EX EXCEPTION;
+                BOOKING_COMP_EX EXCEPTION;
+                INVALID_LISTING_ID_EX EXCEPTION;
+
+        BEGIN
+            SELECT COUNT(*) INTO BOOKING_STATUS_INITIAL FROM BOOKING WHERE BOOKING_STATUS='INITIAL';
+            SELECT COUNT(*) INTO BOOKING_STATUS_COMP FROM BOOKING WHERE BOOKING_STATUS='COMPLETED';
+
+            -- CHECK IF BOOKING ID IS BLANK OR NULL
+            if vBOOKING_ID is NULL or LENGTH(trim(vBOOKING_ID)) IS NULL then
+                raise INVALID_BOOKING_ID_EX;
+            end if;
+
+            -- CHECK IF LISTING ID IS BLANK OR NULL
+            if vLISTING_ID is NULL or LENGTH(trim(vLISTING_ID)) IS NULL then
+                raise INVALID_LISTING_ID_EX;
+            end if;
+
+            -- CHECK IF BOOKING IS ALREADY IN PROGRESS
+            if BOOKING_STATUS_INITIAL > 0 then
+                raise BOOKING_INITIAL_EX;
+            end if;
+
+            -- CHECK IF BOOKING IS ALREADY COMPLETED
+            if BOOKING_STATUS_COMP > 0 then
+                raise BOOKING_COMP_EX;
+            end if;
+
+            RETURN 'YES';
+        EXCEPTION
+            when INVALID_BOOKING_ID_EX then
+                dbms_output.put_line('[ERROR] Invalid Booking ID, Booking ID cannot be NULL or Empty');
+                RETURN 'NO';
+            when BOOKING_INITIAL_EX then
+                dbms_output.put_line('[ERROR] This booking is still in INITIAL state');
+                RETURN 'NO';
+            when BOOKING_COMP_EX then
+                dbms_output.put_line('[ERROR] This booking has already been completed');
+                RETURN 'NO';
+            when INVALID_LISTING_ID_EX then
+                dbms_output.put_line('[ERROR] Invalid Listing ID, Listing ID cannot be NULL or Empty');
+                RETURN 'NO';
+            when others then
+                RETURN 'NO';
+    END BOOKING_COMPLETED_VALIDATION;
 
     FUNCTION COMPARE_TIMESTAMP(
         VTIME_ONE IN TIMESTAMP,
@@ -224,24 +280,103 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
                 extract (second from (VTIME_ONE-VTIMESTAMP_TWO));
 	end COMPARE_TIMESTAMP;
 
-    PROCEDURE INSERT_BOOKING(
+    PROCEDURE INSERT_NEW_BOOKING(
         vBOOKING_STATUS IN BOOKING.BOOKING_STATUS%type,
         vCREATED_START_DATE IN BOOKING.CREATED_START_DATE%type,
         vCREATED_END_DATE IN BOOKING.CREATED_END_DATE%type,
-        vACTUAL_START_DATE IN BOOKING.ACTUAL_START_DATE%type,
-        vACTUAL_END_DATE IN BOOKING.ACTUAL_END_DATE%type,
-        vCOMMENTS IN BOOKING.COMMENTS%type
-        vUSER_ID IN BOOKING.USER_ID%type
+        vUSER_ID IN BOOKING.USER_ID%type,
         vLISTING_ID IN BOOKING.LISTING_ID%type
-        vTRANSACTION_ID IN BOOKING.TRANSACTION_ID%type
-    ) AS
-        vBOOKING_ID BOOKING.BOOKING_ID%TYPE;
-    BEGIN
-        SELECT BOOKING_ID INTO vBOOKING_ID FROM BOOKING
-        -- validate address
-        IF BOOKING_VALIDATION(vADDRESS_LINE_1, vADDRESS_LINE_2, vZIP_CODE) = 'NO' THEN
+        ) AS
+            v1BOOKING_ID BOOKING.BOOKING_ID%TYPE;
+            vDAYS FLOAT;
+            EXISTING_BOOKING NUMBER;
+            vFEE_RATE FLOAT;
+            FETCH_TRANSACTION_ID TRANSACTION.TRANSACTION_ID%TYPE;
+            EXSTING_BOOKING_EX EXCEPTION;
+            INVALID_INPUT_EX EXCEPTION;
+        BEGIN
+            SELECT COUNT(*) INTO EXISTING_BOOKING FROM BOOKING WHERE USER_ID=vUSER_ID AND BOOKING_STATUS <> 'COMPLETED';
+
+            -- IF THE USER HAS AN EXSTING OPEN BOOKING, DONT ALLOW TO RE-BOOK
+            IF EXISTING_BOOKING > 0 THEN
+                RAISE EXSTING_BOOKING_EX;
+            END IF;
+
+            -- validate address
+        IF NEW_BOOKING_VALIDATION(vBOOKING_STATUS, vCREATED_START_DATE, vCREATED_END_DATE, vUSER_ID, vLISTING_ID) = 'NO' THEN
             RAISE INVALID_INPUT_EX;
         END IF;
-    END;
+
+            -- CALCULATE THE NUMBER OF DAYS OF THE BOOKING
+            vDAYS := CAST(vCREATED_END_DATE AS DATE) - CAST(vCREATED_START_DATE AS DATE);
+
+            -- GET THE FEE RATE FROM CAR_LISTING ENTITY
+            SELECT FEE_RATE INTO vFEE_RATE FROM CAR_LISTING WHERE LISTING_ID=vLISTING_ID;
+
+            -- GET THE VALUE OF LISTING_IF FROM CAR_REGISTRATION ENTITY
+            PKG_TRANSACTION.BODY_TRANSACTION('NEW', vDAYS * vFEE_RATE, FETCH_TRANSACTION_ID);
+
+            INSERT INTO BOOKING(BOOKING_ID, BOOKING_STATUS, CREATED_START_DATE, CREATED_END_DATE, USER_ID,TRANSACTION_ID,LISTING_ID) VALUES(
+                'BOOK_'||BOOKING_ID_SEQ.NEXTVAL,UPPER(TRIM(vBOOKING_STATUS)),vCREATED_START_DATE,vCREATED_END_DATE,vUSER_ID,vLISTING_ID,FETCH_TRANSACTION_ID
+            );
+
+        EXCEPTION
+            when EXSTING_BOOKING_EX then
+                dbms_output.put_line('[ERROR] There is an open booking for this customer. Complete that to create a new booking');
+            when INVALID_INPUT_EX then
+                dbms_output.put_line('[ERROR] Invalid Input');
+    END INSERT_NEW_BOOKING;
+
+    PROCEDURE BOOKING_IN_PROGRESS(
+        vBOOKING_ID IN BOOKING.BOOKING_ID%type,
+        vLISTING_ID IN BOOKING.LISTING_ID%type
+        ) AS
+            INVALID_INPUT_EX EXCEPTION;
+        BEGIN
+            -- validate BOOKING
+        IF BOOKING_IN_PROGRESS_VALIDATION(vBOOKING_ID) = 'NO' THEN
+            RAISE INVALID_INPUT_EX;
+        END IF;
+
+        -- UPDATE THE BOOKING STATUS
+        UPDATE BOOKING SET BOOKING_STATUS='IN-PROGRESS', ACTUAL_START_DATE=LOCALTIMESTAMP WHERE BOOKING_ID=vBOOKING_ID;
+
+        EXCEPTION
+            when INVALID_INPUT_EX then
+                dbms_output.put_line('[ERROR] Invalid Input');
+    END BOOKING_IN_PROGRESS;
+    
+    PROCEDURE BOOKING_COMPLETED(
+        vBOOKING_ID IN BOOKING.BOOKING_ID%type,
+        vLISTING_ID IN BOOKING.LISTING_ID%type
+        ) AS
+            vDAYS FLOAT;
+            vFEE_RATE FLOAT;
+            vACTUAL_START_DATE TIMESTAMP;
+            vTRANSACTION_ID BOOKING.TRANSACTION_ID%TYPE;
+            INVALID_INPUT_EX EXCEPTION;
+        BEGIN
+            -- validate BOOKING
+        IF BOOKING_COMPLETED_VALIDATION(vBOOKING_ID, vLISTING_ID) = 'NO' THEN
+            RAISE INVALID_INPUT_EX;
+        END IF;
+
+        SELECT ACTUAL_START_DATE INTO vACTUAL_START_DATE FROM BOOKING WHERE BOOKING_ID=vBOOKING_ID;
+
+        vDAYS := CAST(LOCALTIMESTAMP AS DATE) - CAST(vACTUAL_START_DATE AS DATE);
+
+        SELECT FEE_RATE INTO vFEE_RATE FROM CAR_LISTING WHERE LISTING_ID=vLISTING_ID;
+
+        SELECT TRANSACTION_ID INTO vTRANSACTION_ID FROM BOOKING WHERE BOOKING_ID=vBOOKING_ID;
+
+        PKG_TRANSACTION.BODY_TRANSACTION_UPDATE_TABLE(vTRANSACTION_ID,'PENDING', vDAYS * vFEE_RATE);
+
+        -- UPDATE THE BOOKING STATUS
+        UPDATE BOOKING SET BOOKING_STATUS='COMPLETED', ACTUAL_END_DATE='LOCALTIMESTAMP' WHERE BOOKING_ID=vBOOKING_ID;
+
+        EXCEPTION
+            when INVALID_INPUT_EX then
+                dbms_output.put_line('[ERROR] Invalid Input');
+    END BOOKING_COMPLETED;
 
 END PKG_BOOKING;
