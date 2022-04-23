@@ -53,11 +53,21 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_CAR_LISTING AS
         IF vFEE_RATE IS NULL THEN
             RAISE ex_INVALID_FEE;
         END IF;
-        SELECT count(*) INTO CAR_REGISTER_COUNT FROM CAR_REGISTRATION WHERE CAR_REGISTER_ID = vCAR_REGISTER_ID;
+        BEGIN
+            SELECT count(*) INTO CAR_REGISTER_COUNT FROM CAR_REGISTRATION WHERE CAR_REGISTER_ID = vCAR_REGISTER_ID;
+            EXCEPTION
+                WHEN NO_DATA_FOUND THEN
+                    CAR_REGISTER_COUNT := 0;
+        END;
         IF CAR_REGISTER_COUNT != 1 THEN
             RAISE ex_NO_CAR_REGISTER;
         END IF;
-        SELECT count(*) INTO CAR_PARKING_COUNT FROM CAR_LISTING WHERE PARKING_ID = vCAR_PARKING_ID;
+        BEGIN
+            SELECT count(*) INTO CAR_PARKING_COUNT FROM CAR_LISTING WHERE PARKING_ID = vCAR_PARKING_ID;
+            EXCEPTION
+                WHEN NO_DATA_FOUND THEN
+                    CAR_PARKING_COUNT := 0;
+        END;
         IF CAR_PARKING_COUNT > 0 THEN
             RAISE ex_PARKING_ID_FULL;
         END IF;
@@ -115,7 +125,13 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_CAR_LISTING AS
     BEGIN
         -- check if listing exists
         -- if exists update the price
-        SELECT count(*) INTO vCount FROM CAR_LISTING WHERE LISTING_ID = vCAR_LISTING_ID;
+        BEGIN
+            SELECT count(*) INTO vCount FROM CAR_LISTING WHERE LISTING_ID = vCAR_LISTING_ID;
+            EXCEPTION
+                WHEN NO_DATA_FOUND THEN
+                    vCount := 0;
+        END;
+
         IF vCount < 1 THEN
             RAISE ex_NOT_EXISTS;
         END IF;

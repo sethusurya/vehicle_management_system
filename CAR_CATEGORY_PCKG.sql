@@ -55,7 +55,12 @@ CREATE OR REPLACE EDITIONABLE PACKAGE  BODY PCKG_CAR_CATEGORY   AS
     ex_INVALID EXCEPTION;
     ex_EXISTS EXCEPTION;
     BEGIN
-        select count(CAR_CATEGORY_ID) INTO vCount from CAR_CATEGORY where CAR_CATEGORY_NAME = UPPER(trim(vCAR_CATEGORY_NAME));
+        BEGIN
+            select count(CAR_CATEGORY_ID) INTO vCount from CAR_CATEGORY where CAR_CATEGORY_NAME = UPPER(trim(vCAR_CATEGORY_NAME));
+            EXCEPTION
+                WHEN NO_DATA_FOUND THEN
+                    vCount := 0;
+        END;
         IF vCount > 0 THEN
             raise ex_EXISTS;
         END IF;
@@ -93,11 +98,21 @@ CREATE OR REPLACE EDITIONABLE PACKAGE  BODY PCKG_CAR_CATEGORY   AS
     ex_NOT_EXISTS EXCEPTION;
     ex_INVALID EXCEPTION;
     BEGIN
-        select count(CAR_CATEGORY_ID) INTO vCount FROM CAR_CATEGORY WHERE CAR_CATEGORY_ID = vCAR_CATEGORY_ID;
+        BEGIN
+            select count(CAR_CATEGORY_ID) INTO vCount FROM CAR_CATEGORY WHERE CAR_CATEGORY_ID = vCAR_CATEGORY_ID;
+            EXCEPTION
+                WHEN NO_DATA_FOUND THEN
+                    vCount := 0;
+        END;
         IF vCount != 1 THEN
             RAISE ex_NOT_EXISTS;
         END IF;
-        select count(CAR_CATEGORY_ID) INTO vCount2 from CAR_CATEGORY where CAR_CATEGORY_NAME = UPPER(trim(newCATEGORY_NAME));
+        BEGIN
+            select count(CAR_CATEGORY_ID) INTO vCount2 from CAR_CATEGORY where CAR_CATEGORY_NAME = UPPER(trim(newCATEGORY_NAME));
+            EXCEPTION
+                WHEN NO_DATA_FOUND THEN
+                    vCount2 := 0;
+        END;
         IF vCount2 > 0 THEN
             RAISE ex_EXISTS;
         END IF;
@@ -121,7 +136,12 @@ CREATE OR REPLACE EDITIONABLE PACKAGE  BODY PCKG_CAR_CATEGORY   AS
     vCount NUMBER(5) DEFAULT 0;
     vCAR_CATEGORY_ID CAR_CATEGORY.CAR_CATEGORY_ID%type;
     BEGIN
-        SELECT count(*) INTO vCount FROM CAR_CATEGORY WHERE CAR_CATEGORY_NAME = UPPER(trim(vCAR_CATEGORY_NAME));
+        BEGIN
+            SELECT count(*) INTO vCount FROM CAR_CATEGORY WHERE CAR_CATEGORY_NAME = UPPER(trim(vCAR_CATEGORY_NAME));
+            EXCEPTION
+                WHEN NO_DATA_FOUND THEN
+                    vCount := 0;
+        END;
         IF vCount != 1 THEN
             BEGIN
                 INSERT_CAR_CATEGORY(vCAR_CATEGORY_NAME);
