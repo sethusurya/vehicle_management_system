@@ -1,163 +1,105 @@
-/*CREATE OR REPLACE FUNCTION CHECK_STATE_ID_EXISTS 
-    (
-      vCITY_ID IN CITY.CITY_ID%type 
-    ) RETURN BOOLEAN AS
-    
-        DB_CITY_ID CITY.CITY_ID%type;
-        NO_STATE_FOUND EXCEPTION;
-    BEGIN
-    
-        select CITY_ID into DB_CITY_ID from CITY where CITY_ID = vCITY_ID;
-        if DB_CITY_ID IS NOT NULL then
-            return TRUE;
-        end if;
-        
-        RETURN FALSE;
-END CHECK_STATE_ID_EXISTS;*/
-
-
-CREATE OR REPLACE PROCEDURE INSERT_CITY(
-        vCITY_ID IN CITY.CITY_ID%type,
-        vCITY_NAME IN CITY.CITY_NAME%type,
-        vSTATE_ID IN CITY.STATE_ID%type
-        ) AS     
-        
-        ex_INVALID EXCEPTION;
-        ex_DUPLICATE_CITY EXCEPTION;
-
-BEGIN
-        /*
-        if CITY_CHECK(trim(vCITY_ID),trim(vCITY_NAME),trim(vSTATE_ID)) = 'NO' then
-            raise ex_INVALID;
-        end if;
-         */
-        insert into CITY values (
-           vCITY_ID,
-           trim(vCITY_NAME),
-           trim(vSTATE_ID)
-        );
-        EXCEPTION
-        when ex_INVALID then
-            dbms_output.put_line('INVALID INSERT INPUT !!!');
-
-END INSERT_CITY;
-
-
-CREATE OR REPLACE EDITIONABLE PACKAGE PCKG_CITY   AS 
-    FUNCTION CITY_CHECK(
-        vCITY_ID IN CITY.CITY_ID%type, 
-        vCITY_NAME IN CITY.CITY_NAME%type, 
-        vSTATE_ID IN CITY.STATE_ID%type
+CREATE OR REPLACE EDITIONABLE PACKAGE PCKG_CITY  AS 
+      FUNCTION CITY_CHECK(
+        vCITY_NAME IN CITY.CITY_NAME%type
        ) RETURN VARCHAR2;
        
        PROCEDURE INSERT_CITY(
-        vCITY_ID IN CITY.CITY_ID%type,
-        vCITY_NAME IN CITY.CITY_NAME%type,
-        vSTATE_ID IN CITY.STATE_ID%type
+        vCITY_NAME IN CITY.CITY_NAME%type, 
+        vSTATE_NAME IN STATE.STATE_NAME%type
         );
 END PCKG_CITY;
+/
 
 CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_CITY AS
-
+    
     FUNCTION CITY_CHECK(
-        vCITY_ID IN CITY.CITY_ID%type, 
-        vCITY_NAME IN CITY.CITY_NAME%type, 
-        vSTATE_ID IN CITY.STATE_ID%type
+        vCITY_NAME IN CITY.CITY_NAME%type
        ) 
     RETURN VARCHAR2 AS
-    
+        DB_CITY_NAME NUMBER(38);
+        
         INVALID_CITY_NAME EXCEPTION;
-        INVALID_STATE_ID EXCEPTION;
+        DUPLICATE_CITY_NAME EXCEPTION;
         
     BEGIN
+    
+        select count(CITY_NAME) into DB_CITY_NAME from CITY where CITY_NAME = vCITY_NAME;
+        
+        IF DB_CITY_NAME != 0 THEN
+            raise DUPLICATE_CITY_NAME;
+        END IF;
             
         if vCITY_NAME is NULL or LENGTH(TRIM(vCITY_NAME)) is NULL then
             raise INVALID_CITY_NAME;
         end if;
         
-        if vSTATE_ID is NULL or LENGTH(vSTATE_ID) = 0 then
-            raise INVALID_STATE_ID;
-        end if;
-           
-        
         RETURN 'YES';
     
     EXCEPTION
         when INVALID_CITY_NAME then
-            dbms_output.put_line('Invalid city name !!!');
+            dbms_output.put_line('Invalid CITY name !!!');
             RETURN 'NO';
-        when INVALID_STATE_ID then
-            dbms_output.put_line('Invalid State id !!!');
+        when DUPLICATE_CITY_NAME then
+            dbms_output.put_line('CITY NAME ALREADY EXIST IN STATE TABLE !!!');
             RETURN 'NO';
-    END CITY_CHECK;
+    END;
     
     PROCEDURE INSERT_CITY(
-        vCITY_ID IN CITY.CITY_ID%type,
-        vCITY_NAME IN CITY.CITY_NAME%type,
-        vSTATE_ID IN CITY.STATE_ID%type
+        vCITY_NAME IN CITY.CITY_NAME%type, 
+        vSTATE_NAME IN STATE.STATE_NAME%type
         ) AS     
         
         ex_INVALID EXCEPTION;
-        ex_DUPLICATE_CITY EXCEPTION;
-
-        BEGIN
+        INVALID_STATE_NAME EXCEPTION;
+        ex_STATE_NAME_DOES_NOT_EXIST EXCEPTION;
         
-        if CITY_CHECK(trim(vCITY_ID),trim(vCITY_NAME),trim(vSTATE_ID)) = 'NO' then
-            raise ex_INVALID;
-        end if;
-         
-        insert into CITY(CITY_ID, CITY_NAME, STATE_ID) values (
-           vCITY_ID,
-           trim(vCITY_NAME),
-           vSTATE_ID
-        );
-        EXCEPTION
-        when ex_INVALID then
-            dbms_output.put_line('INVALID INSERT INPUT !!!');
-
-    END INSERT_CITY;
-END PCKG_CITY;
-
-CREATE OR REPLACE FUNCTION CITY_CHECK(
-        vCITY_ID IN CITY.CITY_ID%type, 
-        vCITY_NAME IN CITY.CITY_NAME%type, 
-        vSTATE_ID IN CITY.STATE_ID%type
-       ) 
-    RETURN VARCHAR2 AS
-    
-        INVALID_CITY_NAME EXCEPTION;
-        INVALID_STATE_ID EXCEPTION;
+        DB_STATE_NAME_EXIST NUMBER(38);
+        gSTATE_ID VARCHAR(500); 
         
     BEGIN
-            
+        
+        BEGIN
+        select count(STATE_NAME) into DB_STATE_NAME_EXIST from STATE where STATE_NAME = vSTATE_NAME;
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+            DB_STATE_NAME_EXIST := 0;
+        END;
+        
+        BEGIN
+        select STATE_ID into gSTATE_ID from STATE where STATE_NAME = vSTATE_NAME;
+         EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+            gSTATE_ID := NULL;
+        END;
+        
         if vCITY_NAME is NULL or LENGTH(TRIM(vCITY_NAME)) is NULL then
-            raise INVALID_CITY_NAME;
+            raise ex_INVALID;
         end if;
         
-        if vSTATE_ID is NULL or LENGTH(vSTATE_ID) = 0 then
-            raise INVALID_STATE_ID;
+        if vSTATE_NAME is NULL or  LENGTH(vSTATE_NAME) = 0 then
+            raise INVALID_STATE_NAME;
         end if;
-           
         
-        RETURN 'YES';
-    
-    EXCEPTION
-        when INVALID_CITY_NAME then
-            dbms_output.put_line('Invalid city name !!!');
-            RETURN 'NO';
-        when INVALID_STATE_ID then
-            dbms_output.put_line('Invalid State id !!!');
-            RETURN 'NO';
-    END;
+        if DB_STATE_NAME_EXIST = 0 then
+            raise ex_STATE_NAME_DOES_NOT_EXIST;
+        end if; 
 
---FUNCTION CALL
-SELECT PCKG_CITY.CITY_CHECK(1, 'asd', 10) FROM DUAL;
-SELECT CHECK_STATE_ID_EXISTS(1) FROM DUAL;
-select PCKG_CITY.INSERT_CITY('1', 'Boston', '1') FROM DUAL;
-
-insert into CITY(CITY_ID, CITY_NAME, STATE_ID) values (
-           1,
-           trim('Noordeep'),
-           1
-        );
+        if DB_STATE_NAME_EXIST != 0 AND CITY_CHECK(vCITY_NAME) = 'YES' AND gSTATE_ID IS NOT NULL then
+            INSERT INTO CITY(CITY_ID, CITY_NAME, STATE_ID) VALUES (CITY_ID_SEQ.NEXTVAL, vCITY_NAME, gSTATE_ID);
+        end if; 
         
+        EXCEPTION
+            when ex_INVALID then
+                dbms_output.put_line('INVALID STATE NAME !!!');
+            when INVALID_STATE_NAME then
+                dbms_output.put_line('STATE NAME  IS INVALID!!!');
+            when ex_STATE_NAME_DOES_NOT_EXIST then
+                dbms_output.put_line('STATE NAME DOES NOT EXIST!!!');
+    END INSERT_CITY;
+
+END PCKG_CITY;
+/
+
+EXECUTE PCKG_CITY.INSERT_CITY('ASD', 'ASDASD');
+SELECT * FROM CITY;
+SELECT * FROM STATE;
