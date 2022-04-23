@@ -87,8 +87,14 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PKG_TRANSACTION AS
     RETURN NUMBER AS
     counts NUMBER;
     BEGIN
+
+        begin
         select Count(*) into counts FROM TRANSACTION where TRANSACTION_ID = vTRANSACTION_ID;
         RETURN counts;
+        exception 
+            when NO_DATA_FOUND THEN 
+                counts := 0;
+        end;
     END BODY_TRANSACTION_ID_CHECK; 
 
     FUNCTION BODY_TRANSACTION_ID_GENERATE( 
@@ -110,11 +116,7 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PKG_TRANSACTION AS
         INVALID_STATUS EXCEPTION;
         INVALID_TOTAL_COST EXCEPTION;
         
-    BEGIN     
-        IF(NOT VALIDATE_CONVERSION(vTOTAL_COST AS NUMBER) = 1) THEN
-            RAISE INVALID_TOTAL_COST;
-        END IF;
-        
+    BEGIN      
         if vSTATUS is NULL or LENGTH(TRIM(vSTATUS)) is NULL then
             raise INVALID_STATUS;
         end if;
