@@ -1,4 +1,3 @@
-  --CREATE PACKAGE
 create or replace PACKAGE PKG_BOOKING   AS 
     
     FUNCTION NEW_BOOKING_VALIDATION(
@@ -10,9 +9,10 @@ create or replace PACKAGE PKG_BOOKING   AS
     ) RETURN VARCHAR2;
 
     FUNCTION BOOKING_IN_PROGRESS_VALIDATION(
-        vBOOKING_ID IN BOOKING.BOOKING_ID%type
+            vBOOKING_ID IN BOOKING.BOOKING_ID%type,
+            vLISTING_ID IN BOOKING.LISTING_ID%type
     ) RETURN VARCHAR2;
-    
+
     FUNCTION BOOKING_COMPLETED_VALIDATION(
         vBOOKING_ID IN BOOKING.BOOKING_ID%type,
         vLISTING_ID IN BOOKING.LISTING_ID%type
@@ -30,7 +30,7 @@ create or replace PACKAGE PKG_BOOKING   AS
         vBOOKING_ID IN BOOKING.BOOKING_ID%type,
         vLISTING_ID IN BOOKING.LISTING_ID%type
     );
-    
+
     PROCEDURE BOOKING_COMPLETED(
         vBOOKING_ID IN BOOKING.BOOKING_ID%type,
         vLISTING_ID IN BOOKING.LISTING_ID%type
@@ -43,7 +43,7 @@ create or replace PACKAGE PKG_BOOKING   AS
 
 END PKG_BOOKING;
 
-************************************************************
+/
 
 create or replace PACKAGE BODY PKG_BOOKING   AS
 
@@ -103,12 +103,12 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
             if vCREATED_END_DATE is NULL or to_char(LENGTH(vCREATED_END_DATE)) is NULL then
                 raise CREATED_END_DATE_EX;
             end if;
-            
-            if NOT REGEXP_LIKE(vCREATED_START_DATE, '[0-9]{2}-[0-9]{2}-[0-9]{2} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,7} [AaPp][Mm]') then
+
+            if NOT REGEXP_LIKE(vCREATED_START_DATE, '[0-9]{2}-[0-9]{2}-[0-9]{2} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,10}.[0-9]{1,10} [AaPp][Mm]') then
                 raise INVALID_CREATED_START_DATE_FORMAT;
             end if;	
-            
-            if NOT REGEXP_LIKE(vCREATED_END_DATE, '[0-9]{2}-[0-9]{2}-[0-9]{2} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,7} [AaPp][Mm]') then
+
+            if NOT REGEXP_LIKE(vCREATED_END_DATE, '[0-9]{2}-[0-9]{2}-[0-9]{2} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,10}.[0-9]{1,10} [AaPp][Mm]') then
                 raise INVALID_CREATED_END_DATE_FORMAT;
             end if;	
 
@@ -171,22 +171,37 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
     END NEW_BOOKING_VALIDATION;
 
     FUNCTION BOOKING_IN_PROGRESS_VALIDATION(
-            vBOOKING_ID IN BOOKING.BOOKING_ID%type
+            vBOOKING_ID IN BOOKING.BOOKING_ID%type,
+            vLISTING_ID IN BOOKING.LISTING_ID%type
         ) RETURN VARCHAR2 AS
 
                 BOOKING_STATUS_INPROG NUMBER;
                 BOOKING_STATUS_COMP NUMBER;
+                vIS_BOOKING_PRESENT NUMBER;
+                NO_BOOKING_EX EXCEPTION;
                 INVALID_BOOKING_ID_EX EXCEPTION;
+                INVALID_LISTING_ID_EX EXCEPTION;
                 BOOKING_INPROG_EX EXCEPTION;
                 BOOKING_COMP_EX EXCEPTION;
 
         BEGIN
             SELECT COUNT(*) INTO BOOKING_STATUS_INPROG FROM BOOKING WHERE BOOKING_STATUS='IN-PROGRESS';
             SELECT COUNT(*) INTO BOOKING_STATUS_COMP FROM BOOKING WHERE BOOKING_STATUS='COMPLETED';
+            SELECT COUNT(*) INTO vIS_BOOKING_PRESENT FROM BOOKING WHERE BOOKING_ID=vBOOKING_ID;
 
             -- CHECK IF BOOKING ID IS BLANK OR NULL
             if vBOOKING_ID is NULL or LENGTH(trim(vBOOKING_ID)) IS NULL then
                 raise INVALID_BOOKING_ID_EX;
+            end if;
+
+            -- CHECK IF LISTING ID IS BLANK OR NULL
+            if vLISTING_ID is NULL or LENGTH(trim(vLISTING_ID)) IS NULL then
+                raise INVALID_LISTING_ID_EX;
+            end if;
+
+            -- CHECK IF BOOKING ID IS PRESENT
+            if vIS_BOOKING_PRESENT=0 then
+                raise NO_BOOKING_EX;
             end if;
 
             -- CHECK IF BOOKING IS ALREADY IN PROGRESS
@@ -204,6 +219,12 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
             when INVALID_BOOKING_ID_EX then
                 dbms_output.put_line('[ERROR] Invalid Booking ID, Booking ID cannot be NULL or Empty');
                 RETURN 'NO';
+            when NO_BOOKING_EX then
+                dbms_output.put_line('[ERROR] Provided Booking is not present in the databse');
+                RETURN 'NO';
+            when INVALID_LISTING_ID_EX then
+                dbms_output.put_line('[ERROR] Invalid Listing ID, Listin ID cannot be NULL or Empty');
+                RETURN 'NO';
             when BOOKING_INPROG_EX then
                 dbms_output.put_line('[ERROR] This booking is already IN_PROGRESS');
                 RETURN 'NO';
@@ -213,7 +234,7 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
             when others then
                 RETURN 'NO';
     END BOOKING_IN_PROGRESS_VALIDATION;
-    
+
     FUNCTION BOOKING_COMPLETED_VALIDATION(
             vBOOKING_ID IN BOOKING.BOOKING_ID%type,
             vLISTING_ID IN BOOKING.LISTING_ID%type
@@ -288,9 +309,9 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
         vLISTING_ID IN BOOKING.LISTING_ID%type
         ) AS
             v1BOOKING_ID BOOKING.BOOKING_ID%TYPE;
-            vDAYS FLOAT;
+            vDAYS NUMBER(5,2);
             EXISTING_BOOKING NUMBER;
-            vFEE_RATE FLOAT;
+            vFEE_RATE NUMBER(5,2);
             FETCH_TRANSACTION_ID TRANSACTION.TRANSACTION_ID%TYPE;
             EXSTING_BOOKING_EX EXCEPTION;
             INVALID_INPUT_EX EXCEPTION;
@@ -310,14 +331,19 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
             -- CALCULATE THE NUMBER OF DAYS OF THE BOOKING
             vDAYS := CAST(vCREATED_END_DATE AS DATE) - CAST(vCREATED_START_DATE AS DATE);
 
+            -- IF THE DIFFERENCE IS 0 DAYS, IT NEEDS TO BE CONSIDERED AS 1 DAY
+            IF vDAYS = 0 THEN
+                vDAYS := 1;
+            END IF;
+
             -- GET THE FEE RATE FROM CAR_LISTING ENTITY
             SELECT FEE_RATE INTO vFEE_RATE FROM CAR_LISTING WHERE LISTING_ID=vLISTING_ID;
 
             -- GET THE VALUE OF LISTING_IF FROM CAR_REGISTRATION ENTITY
-            PKG_TRANSACTION.BODY_TRANSACTION('NEW', vDAYS * vFEE_RATE, FETCH_TRANSACTION_ID);
+            PKG_TRANSACTION.BODY_TRANSACTION('PENDING', vDAYS * vFEE_RATE, FETCH_TRANSACTION_ID);
 
             INSERT INTO BOOKING(BOOKING_ID, BOOKING_STATUS, CREATED_START_DATE, CREATED_END_DATE, USER_ID,TRANSACTION_ID,LISTING_ID) VALUES(
-                'BOOK_'||BOOKING_ID_SEQ.NEXTVAL,UPPER(TRIM(vBOOKING_STATUS)),vCREATED_START_DATE,vCREATED_END_DATE,vUSER_ID,vLISTING_ID,FETCH_TRANSACTION_ID
+                'BOOK_'||BOOKING_ID_SEQ.NEXTVAL,UPPER(TRIM(vBOOKING_STATUS)),vCREATED_START_DATE,vCREATED_END_DATE,vUSER_ID,FETCH_TRANSACTION_ID,vLISTING_ID
             );
 
         EXCEPTION
@@ -333,8 +359,8 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
         ) AS
             INVALID_INPUT_EX EXCEPTION;
         BEGIN
-            -- validate BOOKING
-        IF BOOKING_IN_PROGRESS_VALIDATION(vBOOKING_ID) = 'NO' THEN
+        -- validate BOOKING
+        IF BOOKING_IN_PROGRESS_VALIDATION(vBOOKING_ID,vLISTING_ID) = 'NO' THEN
             RAISE INVALID_INPUT_EX;
         END IF;
 
@@ -345,13 +371,13 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
             when INVALID_INPUT_EX then
                 dbms_output.put_line('[ERROR] Invalid Input');
     END BOOKING_IN_PROGRESS;
-    
+
     PROCEDURE BOOKING_COMPLETED(
         vBOOKING_ID IN BOOKING.BOOKING_ID%type,
         vLISTING_ID IN BOOKING.LISTING_ID%type
         ) AS
-            vDAYS FLOAT;
-            vFEE_RATE FLOAT;
+            vDAYS NUMBER(5,2);
+            vFEE_RATE NUMBER(5,2);
             vACTUAL_START_DATE TIMESTAMP;
             vTRANSACTION_ID BOOKING.TRANSACTION_ID%TYPE;
             INVALID_INPUT_EX EXCEPTION;
@@ -364,7 +390,14 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
         SELECT ACTUAL_START_DATE INTO vACTUAL_START_DATE FROM BOOKING WHERE BOOKING_ID=vBOOKING_ID;
 
         vDAYS := CAST(LOCALTIMESTAMP AS DATE) - CAST(vACTUAL_START_DATE AS DATE);
+        dbms_output.put_line('DAYS1: ');
 
+        -- IF THE DIFFERENCE IS 0 DAYS, IT NEEDS TO BE CONSIDERED AS 1 DAY
+            IF vDAYS = 0 THEN
+                vDAYS := 1;
+            END IF;
+
+        dbms_output.put_line('DAYS: '||vDAYS);
         SELECT FEE_RATE INTO vFEE_RATE FROM CAR_LISTING WHERE LISTING_ID=vLISTING_ID;
 
         SELECT TRANSACTION_ID INTO vTRANSACTION_ID FROM BOOKING WHERE BOOKING_ID=vBOOKING_ID;
@@ -372,7 +405,7 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
         PKG_TRANSACTION.BODY_TRANSACTION_UPDATE_TABLE(vTRANSACTION_ID,'PENDING', vDAYS * vFEE_RATE);
 
         -- UPDATE THE BOOKING STATUS
-        UPDATE BOOKING SET BOOKING_STATUS='COMPLETED', ACTUAL_END_DATE='LOCALTIMESTAMP' WHERE BOOKING_ID=vBOOKING_ID;
+        UPDATE BOOKING SET BOOKING_STATUS='COMPLETED', ACTUAL_END_DATE=LOCALTIMESTAMP WHERE BOOKING_ID=vBOOKING_ID;
 
         EXCEPTION
             when INVALID_INPUT_EX then
