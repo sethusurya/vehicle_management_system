@@ -359,6 +359,7 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
             -- GET THE FEE RATE FROM CAR_LISTING ENTITY
 			begin
             SELECT FEE_RATE INTO vFEE_RATE FROM CAR_LISTING WHERE LISTING_ID=vLISTING_ID;
+			exception
 			when NO_DATA_FOUND THEN
 			end;
 			
