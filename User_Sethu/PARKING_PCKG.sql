@@ -38,8 +38,8 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_PARKING AS
             IF vCount2 < 1 THEN
                 INSERT INTO PARKING(PARKING_ID,ADDRESS_ID)
                 VALUES (
-                    PARKING_ID_SEQ.NEXTVAL,
-                    vADDRESS_ID
+                    'PARKING_'||PARKING_ID_SEQ.NEXTVAL,
+                    UPPER(vADDRESS_ID)
                 );
                 dbms_output.put_line('PARKING SPOT INSERTED!!');
             END IF;

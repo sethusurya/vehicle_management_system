@@ -70,5 +70,5 @@ EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER('Artyhbnju123fthyg1', 'zica', 'red', 
 EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER('Artyhbnju123fthyg1', 'zica', 'red', 'tata', 2018, '1-JAN-2018', 'gasoline','manual',4,'CAR_CATEGORY_1','EMPLOYEE_1', 'ADDR_2');
 EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER('Artyhbnju123fthyg1', 'zica', 'red', 'tata', 2018, '1-JAN-2018', 'gasoline','manual',4,'CAR_CATEGORY_1','EMPLOYEE_1', 'ADDR_3');
 --------------------------------------------------CAR LISTING----------------------------------------------------------------
-EXECUTE PCKG_CAR_LISTING.INSERT_CAR_LISTING('TRUE',25.50,'Artyhbnju123fthyg1','1');
-EXECUTE PCKG_CAR_LISTING.INSERT_CAR_LISTING('TRUE',25.50,'Artyhbnju123fthyg1','1');
+EXECUTE PCKG_CAR_LISTING.INSERT_CAR_LISTING('TRUE',25.50,'Artyhbnju123fthyg1','PARKING_1');
+EXECUTE PCKG_CAR_LISTING.INSERT_CAR_LISTING('TRUE',25.50,'Artyhbnju123fthyg1','PARKING_2');
