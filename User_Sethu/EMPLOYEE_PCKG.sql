@@ -87,8 +87,6 @@ EXCEPTION
         dbms_output.put_line('Email is invalid !!!');
     when ex_INVALID_PASSWORD then
         dbms_output.put_line('password is invalid !!!');
---    when ex_INVALID_DATE_OF_JOINING then
---    dbms_output.put_line('DATE of joining is invalid !!!');
     when ex_INVALID_ADDRESS then
         dbms_output.put_line('ADDRESS DOES NOT EXIST !!!');
     when ex_INVALID_ROLE THEN
