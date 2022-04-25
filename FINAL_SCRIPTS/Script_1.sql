@@ -22,13 +22,13 @@ BEGIN
         EXECUTE IMMEDIATE 'grant select any table to ' || user_name_to_create;
         dbms_output.put_line('>>> Allowing user to create directory');
         EXECUTE IMMEDIATE 'grant create any directory, drop any directory to ' || user_name_to_create;
-        dbms_output.put_line('>>> Granting access to crypto package');
+        -- dbms_output.put_line('>>> Granting access to crypto package');
 --        EXECUTE IMMEDIATE 'grant execute on sys.dbms_crypto to ' || user_name_to_create;
 --        dbms_output.put_line('>>> Granting access to Random package');
 --        EXECUTE IMMEDIATE 'grant execute on sys.dbms_random to ' || user_name_to_create;
 --        dbms_output.put_line('>>> Granting tablespace to USER');
         EXECUTE IMMEDIATE 'GRANT UNLIMITED TABLESPACE to ' || user_name_to_create;
-        dbms_output.put_line('>>> Allowing user to insert and update account table');
+        -- dbms_output.put_line('>>> Allowing user to insert and update account table');
 --        EXECUTE IMMEDIATE 'GRANT INSERT ON "ADMIN"."ACCOUNT" TO ' || user_name_to_create || ' WITH GRANT OPTION' ;
 --        EXECUTE IMMEDIATE 'GRANT UPDATE ON "ADMIN"."ACCOUNT" TO ' || user_name_to_create || ' WITH GRANT OPTION' ;
 --        EXECUTE IMMEDIATE 'GRANT REFERENCES ON "ADMIN"."ACCOUNT" TO ' || user_name_to_create || ' WITH GRANT OPTION' ;
