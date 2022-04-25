@@ -80,18 +80,28 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
                 INVALID_CREATED_END_DATE_FORMAT EXCEPTION;
                 INVALID_USER_ID_EX EXCEPTION;
                 INVALID_LISTING_ID_EX EXCEPTION;
-
+                EXISTS_USER_ID_EX EXCEPTION;
+                EXISTS_LISTING_ID_EX EXCEPTION;
+                USER_EXISTS NUMBER;
+                LISTING_EXISTS NUMBER;
 
         BEGIN
+
+            SELECT COUNT(*) INTO USER_EXISTS FROM USERS WHERE USER_ID=UPPER(TRIM(vUSER_ID));
+            SELECT COUNT(*) INTO LISTING_EXISTS FROM CAR_LISTING WHERE LISTING_ID=UPPER(TRIM(vLISTING_ID));
 
             -- CHECK IF USER ID IS BLANK OR NULL
             if vUSER_ID is NULL or LENGTH(trim(vUSER_ID)) IS NULL then
                 raise INVALID_USER_ID_EX;
             end if;
 
+            if USER_EXISTS = 0 then
+                raise EXISTS_USER_ID_EX;
+            end if;
+
             -- CHECK IF LISTING ID IS BLANK OR NULL
-            if vLISTING_ID is NULL or LENGTH(trim(vLISTING_ID)) IS NULL then
-                raise INVALID_LISTING_ID_EX;
+            if LISTING_EXISTS = 0 then
+                raise EXISTS_LISTING_ID_EX;
             end if;
 
             -- CHECK IF CREATED_START_DATE IS BLANK OR NULL
@@ -103,6 +113,14 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
             if vCREATED_END_DATE is NULL or to_char(LENGTH(vCREATED_END_DATE)) is NULL then
                 raise CREATED_END_DATE_EX;
             end if;
+
+            if NOT REGEXP_LIKE(vCREATED_START_DATE, '[0-9]{2}-[0-9]{2}-[0-9]{2} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,10}.[0-9]{1,10} [AaPp][Mm]') then
+                raise INVALID_CREATED_START_DATE_FORMAT;
+            end if;	
+
+            if NOT REGEXP_LIKE(vCREATED_END_DATE, '[0-9]{2}-[0-9]{2}-[0-9]{2} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,10}.[0-9]{1,10} [AaPp][Mm]') then
+                raise INVALID_CREATED_END_DATE_FORMAT;
+            end if;	
 
             -- CHECK IF CREATED_START_DATE IS GREATER THAN CURRENT_DATE
             if COMPARE_TIMESTAMP(vCREATED_START_DATE, SYSTIMESTAMP ) < 0 then
@@ -157,6 +175,12 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
                 RETURN 'NO';
             when INVALID_LISTING_ID_EX then
                 dbms_output.put_line('[ERROR] Invalid ListingId');
+                RETURN 'NO';
+            when EXISTS_USER_ID_EX then
+                dbms_output.put_line('[ERROR] User does not exist');
+                RETURN 'NO';
+            when EXISTS_LISTING_ID_EX then
+                dbms_output.put_line('[ERROR] Listing does not exist');
                 RETURN 'NO';
             when others then
                 RETURN 'NO';
@@ -330,13 +354,7 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
             EXSTING_BOOKING_EX EXCEPTION;
             INVALID_INPUT_EX EXCEPTION;
         BEGIN
-			begin
             SELECT COUNT(*) INTO EXISTING_BOOKING FROM BOOKING WHERE USER_ID=vUSER_ID AND BOOKING_STATUS IN ('INITIAL', 'IN-PROGRESS', 'COMPLETED', 'PAYMENT_FAILED');
-			EXCEPTION
-				when NO_DATA_FOUND THEN
-				EXISTING_BOOKING := 0
-				end;
-				
 
             -- IF THE USER HAS AN EXSTING OPEN BOOKING, DONT ALLOW TO RE-BOOK
             IF EXISTING_BOOKING > 0 THEN
@@ -357,12 +375,7 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
             END IF;
 
             -- GET THE FEE RATE FROM CAR_LISTING ENTITY
-			begin
             SELECT FEE_RATE INTO vFEE_RATE FROM CAR_LISTING WHERE LISTING_ID=vLISTING_ID;
-			exception
-			when NO_DATA_FOUND THEN
-			end;
-			
 
             -- GET THE VALUE OF LISTING_IF FROM CAR_REGISTRATION ENTITY
             PKG_TRANSACTION.BODY_TRANSACTION('PENDING', vDAYS * vFEE_RATE, FETCH_TRANSACTION_ID);
