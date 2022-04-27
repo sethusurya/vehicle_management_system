@@ -1,0 +1,14 @@
+CREATE OR REPLACE EDITIONABLE TRIGGER AUDIT_LOG_TRGR   
+AFTER INSERT OR UPDATE OR DELETE
+ON BOOKING
+FOR EACH ROW
+BEGIN
+CASE
+    WHEN INSERTING THEN
+    INSERT INTO audit_data values(AUDIT_ID_SEQ.nextval, user, 'BOOKING', systimestamp, 'INSERT');
+    WHEN UPDATING THEN
+    INSERT INTO audit_data values(AUDIT_ID_SEQ.nextval, user, 'BOOKING', systimestamp, 'UPDATE');
+    WHEN DELETING THEN
+    INSERT INTO audit_data values(AUDIT_ID_SEQ.nextval, user, 'BOOKING', systimestamp, 'DELETE');
+END CASE;
+END;
