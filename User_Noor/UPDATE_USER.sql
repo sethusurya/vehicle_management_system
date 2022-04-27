@@ -5,6 +5,7 @@ CREATE OR REPLACE FUNCTION CHECK_DRIVER_LICENSE
         
         CHECK_DRIVER_LICENSE_COUNT NUMBER(38);
         BEGIN
+        
             BEGIN
             SELECT COUNT(DRIVER_LICENSE) INTO CHECK_DRIVER_LICENSE_COUNT FROM USERS  WHERE DRIVER_LICENSE = vDRIVER_LICENSE;
             EXCEPTION
@@ -15,7 +16,11 @@ CREATE OR REPLACE FUNCTION CHECK_DRIVER_LICENSE
             IF CHECK_DRIVER_LICENSE_COUNT = 0 THEN 
                 RETURN 'NO';
             END IF; 
-    
+            
+            IF CHECK_DRIVER_LICENSE_COUNT != 0 THEN 
+                dbms_output.put_line('DRIVER LICENSE already exist!!!');
+            END IF; 
+        
         RETURN 'YES';
         END CHECK_DRIVER_LICENSE; 
 
@@ -35,9 +40,37 @@ CREATE OR REPLACE FUNCTION CHECK_PASSPORT
             IF CHECK_PASSPORT_COUNT = 0 THEN 
                 RETURN 'NO';
             END IF; 
-    
+            
+            IF CHECK_PASSPORT_COUNT != 0 THEN 
+                dbms_output.put_line('PASSPORT already exist!!!');
+            END IF; 
+        
         RETURN 'YES';
         END CHECK_PASSPORT; 
+
+CREATE OR REPLACE FUNCTION CHECK_PHONE_NO
+        (vPHONE_NO IN USERS.PHONE_NO%type) 
+        RETURN VARCHAR2 AS 
+        
+        CHECK_PHONE_NO_COUNT NUMBER(38);
+        BEGIN
+            BEGIN
+            SELECT COUNT(PHONE_NO) INTO CHECK_PHONE_NO_COUNT FROM USERS  WHERE PHONE_NO = vPHONE_NO;
+            EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+            CHECK_PHONE_NO_COUNT := 0;
+            END;
+            
+            IF CHECK_PHONE_NO_COUNT = 0 THEN 
+                RETURN 'NO';
+            END IF; 
+            
+            IF CHECK_PHONE_NO_COUNT != 0 THEN 
+                dbms_output.put_line('Phone number already exist!!!');
+            END IF; 
+    
+        RETURN 'YES';
+        END CHECK_PHONE_NO;
         
 
 --SELECT * FROM USERS;
