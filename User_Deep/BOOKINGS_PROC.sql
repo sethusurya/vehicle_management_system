@@ -114,14 +114,6 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
                 raise CREATED_END_DATE_EX;
             end if;
 
-            if NOT REGEXP_LIKE(vCREATED_START_DATE, '[0-9]{2}-[0-9]{2}-[0-9]{2} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,10}.[0-9]{1,10} [AaPp][Mm]') then
-                raise INVALID_CREATED_START_DATE_FORMAT;
-            end if;	
-
-            if NOT REGEXP_LIKE(vCREATED_END_DATE, '[0-9]{2}-[0-9]{2}-[0-9]{2} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,10}.[0-9]{1,10} [AaPp][Mm]') then
-                raise INVALID_CREATED_END_DATE_FORMAT;
-            end if;	
-
             -- CHECK IF CREATED_START_DATE IS GREATER THAN CURRENT_DATE
             if COMPARE_TIMESTAMP(vCREATED_START_DATE, SYSTIMESTAMP ) < 0 then
                 raise CREATED_START_DATE_LESS_THAN_SYS_EX;

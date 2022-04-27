@@ -232,7 +232,7 @@ create or replace PACKAGE BODY PKG_ADDRESS   AS
 
         -- check if city exists
         IF NOT EXITSTING_CITY_NAME = 0 THEN
-            select CITY_ID into FOREIGN_KEY_CITY_ID from CITY where CITY_NAME = vCITY_NAME;
+            select CITY_ID into FOREIGN_KEY_CITY_ID from CITY where CITY_NAME = UPPER(TRIM(vCITY_NAME));
         else
             FOREIGN_KEY_CITY_ID := 'CITY_'||CITY_ID_SEQ.NEXTVAL;
 
