@@ -12,7 +12,13 @@ CREATE OR REPLACE EDITIONABLE PACKAGE PKG_CAR_REGISTER   AS
         vTRANSMISSION_TYPE IN CAR_REGISTRATION.TRANSMISSION_TYPE%type,
         vNO_OF_SEATS IN NUMBER,
         vCAR_CATEGORY_NAME IN CAR_CATEGORY.CAR_CATEGORY_NAME%type,
-        vEMP_EMAIL IN EMPLOYEE.EMP_EMAIL%type
+        vEMP_EMAIL IN EMPLOYEE.EMP_EMAIL%type,
+        vADDRESS_LINE_1 IN ADDRESS.ADDRESS_LINE_1%type,
+        vADDRESS_LINE_2 IN ADDRESS.ADDRESS_LINE_2%type,
+        vZIP_CODE IN ADDRESS.ZIPCODE%type,
+        vCITY_NAME IN CITY.CITY_NAME%TYPE,
+        vSTATE_NAME IN STATE.STATE_NAME%TYPE,
+        vCOUNTRY_NAME IN COUNTRY.COUNTRY_NAME%TYPE
     ); 
     PROCEDURE BODY_CAR_REGISTER( 
         vCAR_REGISTER_ID IN CAR_REGISTRATION.CAR_REGISTER_ID%type,
@@ -98,10 +104,17 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
         vTRANSMISSION_TYPE IN CAR_REGISTRATION.TRANSMISSION_TYPE%type,
         vNO_OF_SEATS IN NUMBER,
         vCAR_CATEGORY_NAME IN CAR_CATEGORY.CAR_CATEGORY_NAME%type,
-        vEMP_EMAIL IN EMPLOYEE.EMP_EMAIL%type
+        vEMP_EMAIL IN EMPLOYEE.EMP_EMAIL%type,
+        vADDRESS_LINE_1 IN ADDRESS.ADDRESS_LINE_1%type,
+        vADDRESS_LINE_2 IN ADDRESS.ADDRESS_LINE_2%type,
+        vZIP_CODE IN ADDRESS.ZIPCODE%type,
+        vCITY_NAME IN CITY.CITY_NAME%TYPE,
+        vSTATE_NAME IN STATE.STATE_NAME%TYPE,
+        vCOUNTRY_NAME IN COUNTRY.COUNTRY_NAME%TYPE
     ) AS 
     INVALID_EMPLOYEE_ID EXCEPTION;
     INVALID_CAR_REGISTER_ID_PRESENT EXCEPTION;
+    INVALID_ADDRESS_DETAILS EXCEPTION;
     ID_CHECK Number;
     vEMPLOYEE_ID CAR_REGISTRATION.EMPLOYEE_ID%type;
     vADDRESS_ID CAR_REGISTRATION.ADDRESS_ID%type;
@@ -117,11 +130,21 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
                 raise INVALID_EMPLOYEE_ID;
             end if;
             select EMPLOYEE_ID into vEMPLOYEE_ID from EMPLOYEE where EMP_EMAIL = UPPER(vEMP_EMAIL);
-            select ADDRESS_ID into vADDRESS_ID from EMPLOYEE where EMP_EMAIL = UPPER(vEMP_EMAIL); 
         end;
         begin
             PCKG_CAR_CATEGORY.CHECK_AND_RETURN_ID(vCAR_CATEGORY_NAME, vCAR_CATEGORY_ID);
-            dbms_output.put_line(vCAR_CATEGORY_ID);
+        end;
+        if vADDRESS_LINE_1 is NULL or LENGTH(TRIM(vADDRESS_LINE_1)) is NULL or vZIP_CODE is NULL or LENGTH(TRIM(vZIP_CODE)) is NULL or vCITY_NAME is NULL or LENGTH(TRIM(vCITY_NAME)) is NULL or vSTATE_NAME is NULL or LENGTH(TRIM(vSTATE_NAME)) is NULL or vCOUNTRY_NAME is NULL or LENGTH(TRIM(vCOUNTRY_NAME)) is NULL then
+            raise INVALID_ADDRESS_DETAILS;
+        end if;
+        begin
+            select Count(*) into ID_CHECK from Address where ADDRESS_LINE_1 = UPPER(vADDRESS_LINE_1) and ADDRESS_TYPE = 'PARKING';
+            if(ID_CHECK = 0) then  
+                PCKG_PARKING_EXT.INSERT_PARKING_EXT(vADDRESS_LINE_1, vADDRESS_LINE_2, vZIP_CODE, vCITY_NAME, vSTATE_NAME, vCOUNTRY_NAME);
+                select ADDRESS_ID into vADDRESS_ID from Address where ADDRESS_LINE_1 = UPPER(vADDRESS_LINE_1) and ADDRESS_TYPE = 'PARKING';
+            else
+                select ADDRESS_ID into vADDRESS_ID from Address where ADDRESS_LINE_1 = UPPER(vADDRESS_LINE_1) and ADDRESS_TYPE = 'PARKING';
+            end if;
         end;
         begin
             select Count(*) into ID_CHECK from CAR_REGISTRATION where CAR_REGISTER_ID = UPPER(vCAR_REGISTER_ID);
@@ -135,6 +158,8 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
             dbms_output.put_line('Invalid employee email !!!');
           when INVALID_CAR_REGISTER_ID_PRESENT then
             dbms_output.put_line('CAR REGISTER ID already present !!!');
+          when INVALID_ADDRESS_DETAILS then
+            dbms_output.put_line('Invalid Address Details !!!');
 
     END BODY_CAR_REGISTER_DATA;
 
@@ -274,7 +299,7 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
         end if;
 
         begin
-            select Count(*) into ID_CHECK from ADDRESS where ADDRESS_ID = UPPER(vADDRESS_ID) AND ADDRESS_TYPE = 'EMPLOYEE';
+            select Count(*) into ID_CHECK from ADDRESS where ADDRESS_ID = UPPER(vADDRESS_ID) AND ADDRESS_TYPE = 'PARKING';
              if(ID_CHECK = 0) then 
                 raise INVALID_ADDRESS_ID;
             end if;
@@ -398,13 +423,12 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
         if Not(temp_car_id > 0) then
              raise INVALID_CAR_REGISTER_ID;
         end if;
-        
+        Select ADDRESS_ID into vADDRESS_ID from CAR_REGISTRATION where CAR_REGISTER_ID = UPPER(vCAR_REGISTER_ID);
         if uCAR_CATEGORY_NAME is NULL or LENGTH(TRIM(uCAR_CATEGORY_NAME)) is NULL then
             Select CAR_CATEGORY_ID into vCAR_CATEGORY_ID from CAR_REGISTRATION where CAR_REGISTER_ID = UPPER(vCAR_REGISTER_ID);
         else
             begin
             PCKG_CAR_CATEGORY.CHECK_AND_RETURN_ID(uCAR_CATEGORY_NAME, vCAR_CATEGORY_ID);
-            dbms_output.put_line(vCAR_CATEGORY_ID);
         end;
         end if;
         
@@ -420,7 +444,6 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
                     raise INVALID_EMPLOYEE_ID;
                 end if;
                 select EMPLOYEE_ID into vEMPLOYEE_ID from EMPLOYEE where EMP_EMAIL = UPPER(vEMP_EMAIL);
-                select ADDRESS_ID into vADDRESS_ID from EMPLOYEE where EMP_EMAIL = UPPER(vEMP_EMAIL); 
             end;
         end if;
         
@@ -488,8 +511,6 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
             ADDRESS_ID = UPPER(vADDRESS_ID)
             WHERE CAR_REGISTER_ID = UPPER(vCAR_REGISTER_ID);
             dbms_output.put_line('Data updated successfully !!!');
-        ELSE
-            dbms_output.put_line('Invalid CAR_REGISTER ID !!!');
          end if;
     EXCEPTION
       when INVALID_EMPLOYEE_ID then
@@ -500,6 +521,8 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
 
 END PKG_CAR_REGISTER;
 
--- select * from car_registration;
--- EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER_UPDATE_TABLE('Artyhbnju123fthyg1', 'zica', '', '', '', '1-JAN-2019', 'gasoline','manual',4,'SEDAN','PAGOLU.S@NORTHEASTERN.EDU');
+select * from car_registration;
+
+-- EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER_DATA('Artyhbnju123fthyg2', 'zica', 'RED', 'TATA', 2018, '1-JAN-2019', 'gasoline','manual',4,'SEDAN','PAGOLU.S@NORTHEASTERN.EDU','16 SHEPHERD AVE','APT 2','02115','BOSTON','MA','USA');
+--  EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER_UPDATE_TABLE('Artyhbnju123fthyg2', 'zica1', 'white', '', '', '1-JAN-2019', 'gasoline','manual',4,'suv','PAGOLU.S@NORTHEASTERN.EDU');
 -- EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER_DELETE_DATA('Artyhbnju123fthyg1');
