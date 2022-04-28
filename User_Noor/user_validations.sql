@@ -14,6 +14,17 @@ CREATE OR REPLACE EDITIONABLE PACKAGE PCKG_USERS  AS
         PROCEDURE DELETE_USER(
         vEMAIL IN USERS.EMAIL%type
         );
+        PROCEDURE UPDATE_USER(
+        vUSER_NAME IN USERS.USER_NAME%type,
+        vEMAIL IN USERS.EMAIL%type, 
+        vPHONE_NO IN USERS.PHONE_NO%type, 
+        vFIRST_NAME IN USERS.FIRST_NAME%type, 
+        vLAST_NAME IN USERS.LAST_NAME%type, 
+        vPASSWORD IN USERS.PASSWORD%type,
+        vDRIVER_LICENSE IN USERS.DRIVER_LICENSE%type,
+        vPASSPORT IN USERS.PASSPORT%type,
+        vBLACKLISTED IN USERS.BLACKLISTED%type
+        );
 END PCKG_USERS;
 /
 
@@ -143,8 +154,68 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
             when ex_DELETE_USER then
                 dbms_output.put_line('Sorry, USER does not exist !!!');
     END DELETE_USER;
+    
+    PROCEDURE UPDATE_USER(
+        vUSER_NAME IN USERS.USER_NAME%type,
+        vEMAIL IN USERS.EMAIL%type, 
+        vPHONE_NO IN USERS.PHONE_NO%type, 
+        vFIRST_NAME IN USERS.FIRST_NAME%type, 
+        vLAST_NAME IN USERS.LAST_NAME%type, 
+        vPASSWORD IN USERS.PASSWORD%type,
+        vDRIVER_LICENSE IN USERS.DRIVER_LICENSE%type,
+        vPASSPORT IN USERS.PASSPORT%type,
+        vBLACKLISTED IN USERS.BLACKLISTED%type
+        ) AS 
+        
+        ex_INVALID_FIRST_NAME EXCEPTION; 
+        ex_INVALID_USER_NAME EXCEPTION;
+        ex_INVALID_LAST_NAME EXCEPTION;
+        ex_INVALID_PASSWORD EXCEPTION;
+        ex_INVALID_DRIVER_LICENSE EXCEPTION;
+        ex_INVALID_ADDRESS_ID EXCEPTION;
+        
+        BEGIN 
+        
+        if vFIRST_NAME is NULL or trim(vFIRST_NAME) is NULL then
+            raise ex_INVALID_FIRST_NAME;
+        end if;
+
+        if vUSER_NAME is NULL or trim(vUSER_NAME) is NULL then
+            raise ex_INVALID_USER_NAME;
+        end if;
+
+        if vLAST_NAME is NULL or trim(vLAST_NAME) is NULL then
+            raise ex_INVALID_LAST_NAME;
+        end if;
+
+        if vPASSWORD is NULL or LENGTH(TRIM(vPASSWORD)) < 5  or trim(vPASSWORD) is NULL then
+            raise ex_INVALID_PASSWORD;
+        end if;
+
+        if vDRIVER_LICENSE is NULL or trim(vDRIVER_LICENSE) is NULL then
+            raise ex_INVALID_DRIVER_LICENSE;
+        end if;
+        
+        UPDATE USERS 
+        SET PHONE_NO = vPHONE_NO, FIRST_NAME = vFIRST_NAME, LAST_NAME = vLAST_NAME, PASSWORD = vPASSWORD, DRIVER_LICENSE = vDRIVER_LICENSE, PASSPORT = vPASSPORT, BLACKLISTED = vBLACKLISTED
+        WHERE EMAIL = vEMAIL;
+        
+        EXCEPTION
+            when ex_INVALID_FIRST_NAME then
+                dbms_output.put_line('First name is invalid !!!');
+            when ex_INVALID_LAST_NAME then
+                dbms_output.put_line('LAST name is invalid !!!');
+            when ex_INVALID_USER_NAME then
+                dbms_output.put_line('USER name is invalid !!!');
+            when ex_INVALID_PASSWORD then
+                dbms_output.put_line('Password should be greater than 5 and should not be null !!!');
+            when ex_INVALID_DRIVER_LICENSE then
+                dbms_output.put_line('INVALID DRIVER LICENSE NUMBER!!!');
+        END UPDATE_USER;
 END PCKG_USERS;
 /
+
+
 
 EXECUTE PCKG_USERS.INSERT_USER('Sethu', 'sethu@gmail.com', '8573337398', 'Sethu', 'Pao', '12345', '3333333','CCV777', 'TRUE', 'ADDR_2');
 EXECUTE PCKG_USERS.INSERT_USER('Noordeep', 'noordeep@gmail.com', '8574151025', 'Noor', 'Gill', '54321', '9876543','ABFG21', 'TRUE', 'ADDR_2');
@@ -167,3 +238,4 @@ EXECUTE PCKG_USERS.DELETE_USER('sai@gmail.COM');
 SELECT * FROM USERS;
 
 --SELECT * FROM ADDRESS;
+EXECUTE PCKG_USERS.UPDATE_USER('Deepu', 'yash@gmail.com', '2587412569', 'Yash kumar', 'Shah', 'TTT223', '7344489', 'ILGXX1', 'TRUE');
