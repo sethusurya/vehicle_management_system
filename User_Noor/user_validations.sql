@@ -25,6 +25,13 @@ CREATE OR REPLACE EDITIONABLE PACKAGE PCKG_USERS  AS
         vPASSPORT IN USERS.PASSPORT%type,
         vBLACKLISTED IN USERS.BLACKLISTED%type
         );
+        FUNCTION CHECK_DRIVER_LICENSE
+        (vDRIVER_LICENSE IN USERS.DRIVER_LICENSE%type) 
+        RETURN VARCHAR2; 
+        
+        FUNCTION CHECK_PASSPORT
+        (vPASSPORT IN USERS.PASSPORT%type) 
+        RETURN VARCHAR2;
 END PCKG_USERS;
 /
 
@@ -171,7 +178,7 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
         ex_INVALID_USER_NAME EXCEPTION;
         ex_INVALID_LAST_NAME EXCEPTION;
         ex_INVALID_PASSWORD EXCEPTION;
-        ex_INVALID_DRIVER_LICENSE EXCEPTION;
+        ex_INVALID_DL EXCEPTION;
         ex_INVALID_ADDRESS_ID EXCEPTION;
         
         BEGIN 
@@ -193,12 +200,14 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
         end if;
 
         if vDRIVER_LICENSE is NULL or trim(vDRIVER_LICENSE) is NULL then
-            raise ex_INVALID_DRIVER_LICENSE;
+            raise ex_INVALID_DL;
         end if;
         
+        if CHECK_PASSPORT(vPASSPORT) = 'NO' AND  CHECK_DRIVER_LICENSE(vDRIVER_LICENSE) = 'NO' then 
         UPDATE USERS 
         SET PHONE_NO = vPHONE_NO, FIRST_NAME = vFIRST_NAME, LAST_NAME = vLAST_NAME, PASSWORD = vPASSWORD, DRIVER_LICENSE = vDRIVER_LICENSE, PASSPORT = vPASSPORT, BLACKLISTED = vBLACKLISTED
         WHERE EMAIL = vEMAIL;
+        end if;
         
         EXCEPTION
             when ex_INVALID_FIRST_NAME then
@@ -209,9 +218,59 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
                 dbms_output.put_line('USER name is invalid !!!');
             when ex_INVALID_PASSWORD then
                 dbms_output.put_line('Password should be greater than 5 and should not be null !!!');
-            when ex_INVALID_DRIVER_LICENSE then
-                dbms_output.put_line('INVALID DRIVER LICENSE NUMBER!!!');
+            when ex_INVALID_DL then
+                dbms_output.put_line('DRIVER LICENSE number already exist !!!');
         END UPDATE_USER;
+        
+        FUNCTION CHECK_DRIVER_LICENSE
+        (vDRIVER_LICENSE IN USERS.DRIVER_LICENSE%type) 
+        RETURN VARCHAR2 AS 
+        
+        CHECK_DRIVER_LICENSE_COUNT NUMBER(38);
+        BEGIN
+        
+            BEGIN
+            SELECT COUNT(DRIVER_LICENSE) INTO CHECK_DRIVER_LICENSE_COUNT FROM USERS  WHERE DRIVER_LICENSE = vDRIVER_LICENSE;
+            EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+            CHECK_DRIVER_LICENSE_COUNT := 0;
+            END;
+            
+            IF CHECK_DRIVER_LICENSE_COUNT = 0 THEN 
+                RETURN 'NO';
+            END IF; 
+            
+            IF CHECK_DRIVER_LICENSE_COUNT != 0 THEN 
+                dbms_output.put_line('DRIVER LICENSE already exist!!!');
+            END IF; 
+        
+        RETURN 'YES';
+        END CHECK_DRIVER_LICENSE; 
+        
+        FUNCTION CHECK_PASSPORT
+        (vPASSPORT IN USERS.PASSPORT%type) 
+        RETURN VARCHAR2 AS 
+        
+        CHECK_PASSPORT_COUNT NUMBER(38);
+        BEGIN
+            BEGIN
+            SELECT COUNT(PASSPORT) INTO CHECK_PASSPORT_COUNT FROM USERS  WHERE PASSPORT = vPASSPORT;
+            EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+            CHECK_PASSPORT_COUNT := 0;
+            END;
+            
+            IF CHECK_PASSPORT_COUNT = 0 THEN 
+                RETURN 'NO';
+            END IF; 
+            
+            IF CHECK_PASSPORT_COUNT != 0 THEN 
+                dbms_output.put_line('PASSPORT already exist!!!');
+            END IF; 
+        
+        RETURN 'YES';
+        END CHECK_PASSPORT; 
+        
 END PCKG_USERS;
 /
 
@@ -239,3 +298,4 @@ SELECT * FROM USERS;
 
 --SELECT * FROM ADDRESS;
 EXECUTE PCKG_USERS.UPDATE_USER('Deepu', 'yash@gmail.com', '2587412569', 'Yash kumar', 'Shah', 'TTT223', '7344489', 'ILGXX1', 'TRUE');
+EXECUTE PCKG_USERS.UPDATE_USER('Vivek', 'yohesh@gmail.com', '2587412569', 'Vivek kumar', 'lala', 'TT8823', '2124489', 'IGGXX1', 'TRUE');
