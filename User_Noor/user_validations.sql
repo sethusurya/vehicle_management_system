@@ -32,6 +32,10 @@ CREATE OR REPLACE EDITIONABLE PACKAGE PCKG_USERS  AS
         FUNCTION CHECK_PASSPORT
         (vPASSPORT IN USERS.PASSPORT%type) 
         RETURN VARCHAR2;
+        
+        FUNCTION CHECK_ADDRESS_ID
+        (vADDRESS_ID IN ADDRESS.ADDRESS_ID%type) 
+        RETURN VARCHAR2;
 END PCKG_USERS;
 /
 
@@ -112,7 +116,7 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
             raise ex_INVALID_DRIVER_LICENSE;
         end if;
         
-        if vADDRESS_ID is NULL or vADDRESS_ID = '' then
+        if vADDRESS_ID is NULL or vADDRESS_ID = '' or CHECK_ADDRESS_ID(vADDRESS_ID) = 'NO' then
             raise ex_INVALID_ADDRESS_ID;
         end if;
 
@@ -133,6 +137,8 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
                 dbms_output.put_line('Password should be greater than 5 and should not be null !!!');
             when ex_INVALID_DRIVER_LICENSE then
                 dbms_output.put_line('INVALID DRIVER LICENSE NUMBER!!!');
+            when ex_INVALID_ADDRESS_ID then
+                dbms_output.put_line('INVALID ADDRESS ID NUMBER OR IT DOES NOT EXIST!!!');
     END INSERT_USER;
     
     PROCEDURE DELETE_USER(
@@ -271,6 +277,30 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
         RETURN 'YES';
         END CHECK_PASSPORT; 
         
+        FUNCTION CHECK_ADDRESS_ID
+        (vADDRESS_ID IN ADDRESS.ADDRESS_ID%type) 
+        RETURN VARCHAR2 AS 
+        
+        CHECK_ADDRESS_ID NUMBER(38);
+        BEGIN
+        
+            BEGIN
+            SELECT COUNT(ADDRESS_ID) INTO CHECK_ADDRESS_ID FROM ADDRESS  WHERE ADDRESS_ID = vADDRESS_ID;
+            EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+            CHECK_ADDRESS_ID := 0;
+            END;
+            
+            IF CHECK_ADDRESS_ID = 0 THEN 
+                RETURN 'NO';
+            END IF;    
+            
+            IF CHECK_ADDRESS_ID != 0 THEN 
+                dbms_output.put_line('ADDRESS ID does not exist !!!');
+            END IF; 
+        
+        RETURN 'YES';
+        END CHECK_ADDRESS_ID; 
 END PCKG_USERS;
 /
 
