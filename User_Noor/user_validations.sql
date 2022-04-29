@@ -63,6 +63,10 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
         ex_INVALID_PASSWORD EXCEPTION;
         ex_INVALID_DRIVER_LICENSE EXCEPTION;
         ex_INVALID_ADDRESS_ID EXCEPTION;
+        ex_INVALID_PHONE_NUMBER EXCEPTION;
+        ex_INVALID_PASSPORT_NUM EXCEPTION;
+        ex_INVALID_EMAIL EXCEPTION;
+        ex_INVALID_PASSPORT_NUMBER EXCEPTION;
 
         CHECK_ADDRESS_COUNT NUMBER(38);
         CHECK_EMAIL_COUNT NUMBER(38);
@@ -112,18 +116,30 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
             raise ex_INVALID_LAST_NAME;
         end if;
 
-        if vPASSWORD is NULL or LENGTH(TRIM(vPASSWORD)) > 5 then
+        if vPASSWORD is NULL or LENGTH(TRIM(vPASSWORD)) < 5 then
             raise ex_INVALID_PASSWORD;
         end if;
 
-        if vDRIVER_LICENSE is NULL then
+        if vDRIVER_LICENSE is NULL  or LENGTH(TRIM(vDRIVER_LICENSE)) != 10 then
             raise ex_INVALID_DRIVER_LICENSE;
         end if;
         
         if vADDRESS_ID is NULL or vADDRESS_ID = '' or CHECK_ADDRESS_ID(vADDRESS_ID) = 'NO' then
             raise ex_INVALID_ADDRESS_ID;
         end if;
-
+        
+        if vPHONE_NO is NULL or LENGTH(trim(vPHONE_NO)) != 10 then 
+            raise ex_INVALID_PHONE_NUMBER;
+        end if;
+        
+        if vPASSPORT is NULL or LENGTH(trim(vPASSPORT)) < 6 then 
+            raise ex_INVALID_PASSPORT_NUM;
+        end if;
+        
+        if vEMAIL is NULL or LENGTH(trim(vEMAIL)) = 0 then 
+            raise ex_INVALID_EMAIL;
+        end if;
+        
         IF CHECK_EMAIL_COUNT = 0 AND CHECK_USER_NAME_COUNT = 0 AND CHECK_DL_COUNT = 0 AND CHECK_PASSPORT_COUNT = 0 THEN 
         INSERT INTO USERS(USER_ID, PASSWORD, USER_NAME, EMAIL, PHONE_NO, FIRST_NAME, LAST_NAME, DATE_OF_JOINING, DRIVER_LICENSE, PASSPORT, BLACKLISTED, ADDRESS_ID)
         VALUES
@@ -143,6 +159,14 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
                 dbms_output.put_line('INVALID DRIVER LICENSE NUMBER!!!');
             when ex_INVALID_ADDRESS_ID then
                 dbms_output.put_line('INVALID ADDRESS ID NUMBER OR IT DOES NOT EXIST!!!');
+            when ex_INVALID_PHONE_NUMBER then 
+                dbms_output.put_line('INVALID phone number!!!');
+            when ex_INVALID_PASSPORT_NUMBER then 
+                dbms_output.put_line('Either passport number is invalid or its smaller tan 5 !!!');
+            when ex_INVALID_EMAIL then 
+                dbms_output.put_line('Email is NULL or invalid !!!');
+            when ex_INVALID_PASSPORT_NUM then 
+                dbms_output.put_line('Passport is NULL or invalid !!!');  
     END INSERT_USER;
     
     PROCEDURE DELETE_USER(
@@ -150,18 +174,38 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
         ) AS     
         
         ex_DELETE_USER EXCEPTION; 
+        ex_USER_EXIST_IN_BOOKING EXCEPTION;
+        ex_USER_ID_IN_BOOKING_COUNT EXCEPTION;
+        
         CHECK_EMAIL_COUNT NUMBER(38);
+        USER_USER_ID_IN_BOOKING_COUNT NUMBER(38);
+        USER_ID_VAL_FROM_USER_TBL VARCHAR2(500);
+        USER_EXIST_IN_BOOKING_COUNT NUMBER(38);
+        
     BEGIN
         
         BEGIN
-        SELECT COUNT(EMAIL) INTO CHECK_EMAIL_COUNT FROM USERS WHERE EMAIL = vEMAIL; 
+        SELECT USER_ID INTO USER_ID_VAL_FROM_USER_TBL FROM USERS WHERE EMAIL = vEMAIL; 
         EXCEPTION
             WHEN NO_DATA_FOUND THEN
-            CHECK_EMAIL_COUNT := 0;
+            USER_ID_VAL_FROM_USER_TBL := 0;
         END;
         
+        IF USER_ID_VAL_FROM_USER_TBL is NOT NULL or  USER_ID_VAL_FROM_USER_TBL != '' then
+        BEGIN
+        SELECT COUNT(USER_ID) INTO USER_USER_ID_IN_BOOKING_COUNT FROM BOOKING WHERE USER_ID = USER_ID_VAL_FROM_USER_TBL; 
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+            USER_USER_ID_IN_BOOKING_COUNT := 0;
+        END;
+        END IF;
+    
+        IF USER_USER_ID_IN_BOOKING_COUNT != 0 THEN 
+             raise ex_USER_ID_IN_BOOKING_COUNT;
+        END IF;
+        
         IF CHECK_EMAIL_COUNT != 0 THEN 
-        DELETE FROM USERS WHERE EMAIL = vEMAIL;
+        DELETE FROM USERS WHERE UPPER(EMAIL) = UPPER(vEMAIL);
         END IF; 
         
         IF CHECK_EMAIL_COUNT = 0 THEN 
@@ -170,6 +214,8 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
         EXCEPTION
             when ex_DELETE_USER then
                 dbms_output.put_line('Sorry, USER does not exist !!!');
+            when ex_USER_ID_IN_BOOKING_COUNT then 
+                dbms_output.put_line('User exist in Booking table, cant delete !!!');
     END DELETE_USER;
     
     PROCEDURE UPDATE_USER(
@@ -190,6 +236,8 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
         ex_INVALID_PASSWORD EXCEPTION;
         ex_INVALID_DL EXCEPTION;
         ex_INVALID_ADDRESS_ID EXCEPTION;
+        ex_INVALID_EMAIL EXCEPTION;
+        ex_INVALID_EMAIL_FOR_UPDATE EXCEPTION;
         
         BEGIN 
         
@@ -205,7 +253,7 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
             raise ex_INVALID_LAST_NAME;
         end if;
 
-        if vPASSWORD is NULL or LENGTH(TRIM(vPASSWORD)) < 5  or trim(vPASSWORD) is NULL then
+        if vPASSWORD is NULL or LENGTH(TRIM(vPASSWORD)) < 5 then
             raise ex_INVALID_PASSWORD;
         end if;
 
@@ -213,10 +261,14 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
             raise ex_INVALID_DL;
         end if;
         
+        if vEMAIL is NULL or LENGTH(trim(vEMAIL)) = 0 then 
+            raise ex_INVALID_EMAIL_FOR_UPDATE;
+        end if;
+        
         if CHECK_PASSPORT(vPASSPORT) = 'NO' AND  CHECK_DRIVER_LICENSE(vDRIVER_LICENSE) = 'NO' AND CHECK_EMAIL(vEMAIL) = 'NO' then 
         UPDATE USERS 
         SET PHONE_NO = vPHONE_NO, FIRST_NAME = vFIRST_NAME, LAST_NAME = vLAST_NAME, PASSWORD = vPASSWORD, DRIVER_LICENSE = vDRIVER_LICENSE, PASSPORT = vPASSPORT, BLACKLISTED = vBLACKLISTED
-        WHERE EMAIL = vEMAIL;
+        WHERE UPPER(EMAIL) = UPPER(vEMAIL);
         end if;
         
         EXCEPTION
@@ -230,6 +282,8 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
                 dbms_output.put_line('Password should be greater than 5 and should not be null !!!');
             when ex_INVALID_DL then
                 dbms_output.put_line('DRIVER LICENSE number already exist !!!');
+            when ex_INVALID_EMAIL_FOR_UPDATE then
+                dbms_output.put_line('Email is null or invalid !!!');
         END UPDATE_USER;
         
         FUNCTION CHECK_DRIVER_LICENSE
@@ -296,12 +350,9 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
             END;
             
             IF CHECK_ADDRESS_ID = 0 THEN 
+                dbms_output.put_line('ADDRESS ID does not exist !!!');
                 RETURN 'NO';
             END IF;    
-            
-            IF CHECK_ADDRESS_ID != 0 THEN 
-                dbms_output.put_line('ADDRESS ID does not exist !!!');
-            END IF; 
         
         RETURN 'YES';
         END CHECK_ADDRESS_ID; 
@@ -322,7 +373,7 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
             
             IF CHECK_EMAIL_COUNT = 0 THEN 
                 RETURN 'NO';
-            END IF;    
+           END IF;    
             
             IF CHECK_EMAIL_COUNT != 0 THEN 
                 dbms_output.put_line('EMAIL ID ALREADY EXIST !!!');
@@ -333,28 +384,36 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
 END PCKG_USERS;
 /
 
+--EXECUTE PCKG_USERS.UPDATE_USER('Jai', 'jai@gmail.com', '8525417883', 'Jai', 'Jain', '875ABD', '7892145639','JJH589LK', 'FALSE', 'ADDR_8');
+
+--EXECUTE PCKG_USERS.UPDATE_USER('Jai', 'jai@gmail.com', '8525417883', 'Jai', 'Jain', '875ABD', '7892145639','JJH589LK', 'FALSE', 'ADDR_8');
 
 
-EXECUTE PCKG_USERS.INSERT_USER('Sethu', 'sethu@gmail.com', '8573337398', 'Sethu', 'Pao', '12345', '3333333','CCV777', 'TRUE', 'ADDR_2');
-EXECUTE PCKG_USERS.INSERT_USER('Noordeep', 'noordeep@gmail.com', '8574151025', 'Noor', 'Gill', '54321', '9876543','ABFG21', 'TRUE', 'ADDR_2');
-EXECUTE PCKG_USERS.INSERT_USER('Yash', 'yash@gmail.com', '8574151111', 'Yash', 'Jain', '85247', '7412589','INJG21', 'TRUE', 'ADDR_2');
-EXECUTE PCKG_USERS.INSERT_USER('Deep', 'deep@gmail.com', '8572220011', 'Deep', 'Vaidya', '96324', '8521475','IN2221', 'TRUE', 'ADDR_2');
-EXECUTE PCKG_USERS.INSERT_USER('Sai', 'sai@gmail.com', '8573330441', 'Sai', 'Kumar', '85412', '987523','IN3030', 'TRUE', 'ADDR_2');
 
-EXECUTE PCKG_USERS.INSERT_USER('Sethu', 'sethu@gmail.com', '8573337398', 'Sethu', 'Pao', '12345', '3333333','CCV777', 'TRUE', 'ADDR_2');
-EXECUTE PCKG_USERS.INSERT_USER('Noordeep', 'noordeep@gmail.com', '8574151025', 'Noor', 'Gill', '54321', '9876543','ABFG21', 'TRUE', 'ADDR_2');
-EXECUTE PCKG_USERS.INSERT_USER('Yash', 'yash@gmail.com', '8574151111', 'Yash', 'Jain', '85247', '7412589','INJG21', 'TRUE', 'ADDR_2');
-EXECUTE PCKG_USERS.INSERT_USER('Deep', 'deep@gmail.com', '8572220011', 'Deep', 'Vaidya', '96324', '8521475','IN2221', 'TRUE', 'ADDR_2');
-EXECUTE PCKG_USERS.INSERT_USER('Sai', 'sai@gmail.com', '8573330441', 'Sai', 'Kumar', '85412', '987523','IN3030', 'TRUE', 'ADDR_2');
+
+--SELECT * FROM USERS;
+--EXECUTE PCKG_USERS.INSERT_USER('Sethu', 'sethu@gmail.com', '8573337398', 'Sethu', 'Pao', '12345', '3333333','CCV777', 'TRUE', 'ADDR_2');
+--EXECUTE PCKG_USERS.INSERT_USER('Noordeep', 'noordeep@gmail.com', '8574151025', 'Noor', 'Gill', '54321', '9876543','ABFG21', 'TRUE', 'ADDR_2');
+--EXECUTE PCKG_USERS.INSERT_USER('Yash', 'yash@gmail.com', '8574151111', 'Yash', 'Jain', '85247', '7412589','INJG21', 'TRUE', 'ADDR_2');
+--EXECUTE PCKG_USERS.INSERT_USER('Deep', 'deep@gmail.com', '8572220011', 'Deep', 'Vaidya', '96324', '8521475','IN2221', 'TRUE', 'ADDR_2');
+--EXECUTE PCKG_USERS.INSERT_USER('Sai', 'sai@gmail.com', '8573330441', 'Sai', 'Kumar', '85412', '987523','IN3030', 'TRUE', 'ADDR_2');
+
+----EXECUTE PCKG_USERS.INSERT_USER('Sai', 'sai@gmail.com', '8573330441', 'Sai', 'Kumar', '85412', '987523','IN3030', 'TRUE', 'ADDR_2');
+--EXECUTE PCKG_USERS.INSERT_USER('Sethu', 'sethu@gmail.com', '8573337398', 'Sethu', 'Pao', '12345', '3333333','CCV777', 'TRUE', 'ADDR_2');
+--EXECUTE PCKG_USERS.INSERT_USER('Noordeep', 'noordeep@gmail.com', '8574151025', 'Noor', 'Gill', '54321', '9876543','ABFG21', 'TRUE', 'ADDR_2');
+--EXECUTE PCKG_USERS.INSERT_USER('Yash', 'yash@gmail.com', '8574151111', 'Yash', 'Jain', '85247', '7412589','INJG21', 'TRUE', 'ADDR_2');
+--EXECUTE PCKG_USERS.INSERT_USER('Deep', 'deep@gmail.com', '8572220011', 'Deep', 'Vaidya', '96324', '8521475','IN2221', 'TRUE', 'ADDR_2');
+--EXECUTE PCKG_USERS.INSERT_USER('Sai', 'sai@gmail.com', '8573330441', 'Sai', 'Kumar', '85412', '987523','IN3030', 'TRUE', 'ADDR_2');
 
 --EXECUTE PCKG_USERS.DELETE_USER('sai@gmail.COM');
-EXECUTE PCKG_USERS.DELETE_USER('sethu@GMAIL.COM');
-EXECUTE PCKG_USERS.DELETE_USER('noordeep@gmail.COM');
-EXECUTE PCKG_USERS.DELETE_USER('yash@gmail.COM');
-EXECUTE PCKG_USERS.DELETE_USER('deep@gmail.COM');
-EXECUTE PCKG_USERS.DELETE_USER('sai@gmail.COM');
-SELECT * FROM USERS;
+--EXECUTE PCKG_USERS.DELETE_USER('sethu@gmail.com');
+--EXECUTE PCKG_USERS.DELETE_USER('noordeep@gmail.com');
+--EXECUTE PCKG_USERS.DELETE_USER('yash@gmail.COM');
+--EXECUTE PCKG_USERS.DELETE_USER('deep@gmail.COM');
+--EXECUTE PCKG_USERS.DELETE_USER('sai@gmail.COM');
+--SELECT * FROM BOOKING;
+--SELECT * FROM USERS;
 
 --SELECT * FROM ADDRESS;
-EXECUTE PCKG_USERS.UPDATE_USER('Deepu', 'yash@gmail.com', '2587412569', 'Yash kumar', 'Shah', 'TTT223', '7344489', 'ILGXX1', 'TRUE');
-EXECUTE PCKG_USERS.UPDATE_USER('Vivek', 'yohesh@gmail.com', '2587412569', 'Vivek kumar', 'lala', 'TT8823', '2124489', 'IGGXX1', 'TRUE');
+--EXECUTE PCKG_USERS.UPDATE_USER('Deepu', 'yash@gmail.com', '2587412569', 'Yash kumar', 'Shah', 'TTT223', '7344489', 'ILGXX1', 'TRUE');
+--EXECUTE PCKG_USERS.UPDATE_USER('Vivek', 'yohesh@gmail.com', '2587412569', 'Vivek kumar', 'lala', 'TT8823', '2124489', 'IGGXX1', 'TRUE');
