@@ -46,6 +46,10 @@ create or replace PACKAGE PKG_BOOKING   AS
         vBOOKING_ID IN BOOKING.BOOKING_ID%type
     );
 
+    PROCEDURE BOOKING_CANCELLED(
+        vBOOKING_ID IN BOOKING.BOOKING_ID%type
+    );
+
 	 FUNCTION COMPARE_TIMESTAMP(
         VTIME_ONE IN TIMESTAMP,
         VTIMESTAMP_TWO IN TIMESTAMP
@@ -58,6 +62,7 @@ END PKG_BOOKING;
 
 create or replace PACKAGE BODY PKG_BOOKING   AS
 
+    -- Validations while adding a new booking
     FUNCTION NEW_BOOKING_VALIDATION(
             vCREATED_START_DATE IN BOOKING.CREATED_START_DATE%type,
             vCREATED_END_DATE IN BOOKING.CREATED_END_DATE%type,
@@ -179,6 +184,7 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
                 RETURN 'NO';
     END NEW_BOOKING_VALIDATION;
 
+    -- Validations while updating a booking to IN-PROGRESS
     FUNCTION BOOKING_IN_PROGRESS_VALIDATION(
             vBOOKING_ID IN BOOKING.BOOKING_ID%type,
             vLISTING_ID IN BOOKING.LISTING_ID%type
@@ -244,6 +250,7 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
                 RETURN 'NO';
     END BOOKING_IN_PROGRESS_VALIDATION;
 
+    -- Validations while updating a booking to COMPLETED
     FUNCTION BOOKING_COMPLETED_VALIDATION(
             vBOOKING_ID IN BOOKING.BOOKING_ID%type,
             vLISTING_ID IN BOOKING.LISTING_ID%type
@@ -298,6 +305,7 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
                 RETURN 'NO';
     END BOOKING_COMPLETED_VALIDATION;
 
+    -- Validations while updating a booking to PAYMENT-SUCCESS
     FUNCTION BOOKING_PAYMENT_VALIDATION(
             vBOOKING_ID IN BOOKING.BOOKING_ID%type
         ) RETURN VARCHAR2 AS
@@ -320,6 +328,7 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
                 RETURN 'NO';
     END BOOKING_PAYMENT_VALIDATION;
 
+    -- Function to compare the timestamps
     FUNCTION COMPARE_TIMESTAMP(
         VTIME_ONE IN TIMESTAMP,
         VTIMESTAMP_TWO IN TIMESTAMP
@@ -332,6 +341,7 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
                 extract (second from (VTIME_ONE-VTIMESTAMP_TWO));
 	end COMPARE_TIMESTAMP;
 
+    -- Procedure to add a new booking
     PROCEDURE INSERT_NEW_BOOKING(
         vCREATED_START_DATE IN BOOKING.CREATED_START_DATE%type,
         vCREATED_END_DATE IN BOOKING.CREATED_END_DATE%type,
@@ -401,6 +411,7 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
                 dbms_output.put_line('[ERROR] User blacklisted. Cannot book a ride');
     END INSERT_NEW_BOOKING;
 
+    -- Procedure to update a booking to IN-PROGRESS
     PROCEDURE BOOKING_IN_PROGRESS(
         vBOOKING_ID IN BOOKING.BOOKING_ID%type,
         vLISTING_ID IN BOOKING.LISTING_ID%type
@@ -420,6 +431,7 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
                 dbms_output.put_line('[ERROR] Invalid Input');
     END BOOKING_IN_PROGRESS;
 
+    -- Procedure to update a booking to COMPLETED
     PROCEDURE BOOKING_COMPLETED(
         vBOOKING_ID IN BOOKING.BOOKING_ID%type,
         vLISTING_ID IN BOOKING.LISTING_ID%type
@@ -458,6 +470,7 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
                 dbms_output.put_line('[ERROR] Invalid Input');
     END BOOKING_COMPLETED;
 
+    -- Procedure to update a booking to PAYMENT-SUCCESS
     PROCEDURE BOOKING_PAYMENT_SUCCESS(
         vBOOKING_ID IN BOOKING.BOOKING_ID%type
         ) AS
@@ -518,6 +531,7 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
                 dbms_output.put_line('[ERROR] Booking still in IN-PROGRESS state, needs to be completed for payment');
     END BOOKING_PAYMENT_SUCCESS;
 
+    -- Procedure to update a booking to PAYMENT-FAILED
     PROCEDURE BOOKING_PAYMENT_FAIL(
         vBOOKING_ID IN BOOKING.BOOKING_ID%type
         ) AS
@@ -577,6 +591,64 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
             when IN_PROG_EX then
                 dbms_output.put_line('[ERROR] Booking still in IN-PROGRESS state, needs to be completed for payment');
     END BOOKING_PAYMENT_FAIL;
+
+    -- Procedure to cancel a booking
+    PROCEDURE BOOKING_CANCELLED(
+            vBOOKING_ID IN BOOKING.BOOKING_ID%type
+        ) AS
+            vCREATED_DATE_TIME BOOKING.CREATED_START_DATE%TYPE;
+            CANCELLED_COUNT NUMBER;
+            vTRANSACTION_ID BOOKING.TRANSACTION_ID%TYPE;
+            NO_DATA_EX EXCEPTION;
+            CANNOT_CANCEL_EX EXCEPTION;
+            ALREADY_CANCELLED_EX EXCEPTION;
+        BEGIN
+            -- Fetch the created start date for the user
+            BEGIN
+                SELECT CREATED_START_DATE INTO vCREATED_DATE_TIME FROM BOOKING WHERE BOOKING_ID=vBOOKING_ID;
+				EXCEPTION
+					WHEN NO_DATA_FOUND THEN
+					RAISE NO_DATA_EX;
+            END;
+
+            -- fetch the transaction id for the user
+            BEGIN
+                SELECT TRANSACTION_ID INTO vTRANSACTION_ID FROM BOOKING WHERE BOOKING_ID=vBOOKING_ID;
+				EXCEPTION
+					WHEN NO_DATA_FOUND THEN
+					RAISE NO_DATA_EX;
+            END;
+
+            -- fetch the count of cancelled booking for the current user
+            BEGIN
+                SELECT COUNT(*) INTO CANCELLED_COUNT FROM BOOKING WHERE BOOKING_ID=vBOOKING_ID AND BOOKING_STATUS='CANCELLED';
+				EXCEPTION
+					WHEN NO_DATA_FOUND THEN
+					RAISE NO_DATA_EX;
+            END;
+
+            -- raise an exception if the booking for the current user is already cancelled
+            IF CANCELLED_COUNT > 0 THEN
+                RAISE ALREADY_CANCELLED_EX;
+            END IF;
+
+            -- dont allow cancellation if the time of cancellation is after the created start date
+            IF vCREATED_DATE_TIME > LOCALTIMESTAMP THEN
+                UPDATE BOOKING SET BOOKING_STATUS='CANCELLED' WHERE BOOKING_ID=vBOOKING_ID;
+            ELSE
+                RAISE CANNOT_CANCEL_EX;
+            END IF;
+
+            -- change the total cost of the user to 0 after cancellation
+            UPDATE TRANSACTION SET TOTAL_COST = 0.0, STATUS='CANCELLED' WHERE TRANSACTION_ID=vTRANSACTION_ID;
+        EXCEPTION
+            when CANNOT_CANCEL_EX then
+                dbms_output.put_line('[ERROR] Cannot cancel the booking after the Start Time of the booking');
+            when ALREADY_CANCELLED_EX then
+                dbms_output.put_line('[ERROR] The booking is already in CANCELLED state');
+            when NO_DATA_EX then
+                dbms_output.put_line('[ERROR] No records found');
+        END;
 
 END PKG_BOOKING;
 /
