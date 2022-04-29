@@ -204,16 +204,12 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
              raise ex_USER_ID_IN_BOOKING_COUNT;
         END IF;
         
-        IF CHECK_EMAIL_COUNT != 0 THEN 
+        IF USER_USER_ID_IN_BOOKING_COUNT = 0 THEN 
         DELETE FROM USERS WHERE UPPER(EMAIL) = UPPER(vEMAIL);
         END IF; 
         
-        IF CHECK_EMAIL_COUNT = 0 THEN 
-            raise ex_DELETE_USER; 
-        END IF; 
+    
         EXCEPTION
-            when ex_DELETE_USER then
-                dbms_output.put_line('Sorry, USER does not exist !!!');
             when ex_USER_ID_IN_BOOKING_COUNT then 
                 dbms_output.put_line('User exist in Booking table, cant delete !!!');
     END DELETE_USER;
@@ -398,7 +394,6 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
 END PCKG_USERS;
 /
 
-
 --insert users
 --EXECUTE PCKG_USERS.INSERT_USER('Sethu', 'sethu@gmail.com', '8573337398', 'Sethu', 'Pag', '123456', '6987451254','CXCV7743', 'FALSE', 'ADDR_1');
 --EXECUTE PCKG_USERS.INSERT_USER('Noordeep', 'noordeep@gmail.com', '8574151025', 'Noor', 'Gill', '54A3C21', '2587412589','ABFG2170', 'FALSE', 'ADDR_2');
@@ -421,4 +416,4 @@ END PCKG_USERS;
 --EXECUTE PCKG_USERS.UPDATE_USER('Sethua', 'sethu@gmail.com', '9893055067', 'Sethua', 'Zamp', 'AAXJD6', '88541257', 'CKCJF126', 'FALSE');
 
 -- Delete a user
---EXECUTE PCKG_USERS.DELETE_USER('sai@gmail.COM');
+--EXECUTE PCKG_USERS.DELETE_USER('akshay@yahoo.com');
