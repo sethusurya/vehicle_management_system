@@ -39,3 +39,16 @@ EXECUTE PCKG_EMPLOYEE.INSERT_EMPLOYEE('Karthik', 'Dinesh', 'Karthik@northeastern
 EXECUTE PCKG_EMPLOYEE.INSERT_EMPLOYEE('Pant', 'Rishab', 'Pant@northeastern.edu', 'Pant567', 'ADDR_2', '1'); 
 EXECUTE PCKG_EMPLOYEE.INSERT_EMPLOYEE('Kishan', 'Ishan', 'Kishan@northeastern.edu', 'Kishan567', 'ADDR_2', '1'); 
 EXECUTE PCKG_EMPLOYEE.INSERT_EMPLOYEE('Khaleel', 'Ahmead', 'Khaleel@northeastern.edu', 'Khaleel567', 'ADDR_3', '2'); 
+
+
+
+
+
+EXECUTE PCKG_USERS.INSERT_USER('Hari', 'Hari@gmail.com', '9974337396', 'Hari', 'Sai', '12398', '3333678','CDV783', 'TRUE', 'ADDR_2');
+EXECUTE PCKG_USERS.INSERT_USER('Vivek', 'Vivek@gmail.com', '8574155631', 'Vivek', 'Mannava', '88888', '9876487','KBLG21', 'TRUE', 'ADDR_1');
+EXECUTE PCKG_USERS.INSERT_USER('Sam', 'Sam@gmail.com', '8574151111', 'Sam', 'Hal', '34526', '4235167','INHG34', 'TRUE', 'ADDR_1');
+EXECUTE PCKG_USERS.INSERT_USER('John', 'John@gmail.com', '4156182598', 'John', 'Wesly', '56342', '4445673','FRB867', 'TRUE', 'ADDR_3');
+EXECUTE PCKG_USERS.INSERT_USER('Ramesh', 'Ramesh@gmail.com', '8575555683', 'Ramesh', 'Jain', '85445', '8898476','IFDX21', 'TRUE', 'ADDR_3');
+EXECUTE PCKG_USERS.INSERT_USER('Yogesh', 'yohesh@gmail.com', '8574152331', 'Yogesh', 'Mahato', '25479', '7418659','AFJT21', 'TRUE', 'ADDR_1');
+EXECUTE PCKG_USERS.INSERT_USER('Sara', 'Sara@gmail.com', '2572229876', 'Sara', 'Vaidya', '78524', '2341475','IN9821', 'TRUE', 'ADDR_3');
+EXECUTE PCKG_USERS.INSERT_USER('Mike', 'Mike@gmail.com', '8763330441', 'Mike', 'Kush', '87456', '986998','IN3531', 'TRUE', 'ADDR_1');
