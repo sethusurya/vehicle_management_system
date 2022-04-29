@@ -4,20 +4,12 @@
 --------------------------------------
 
 create or replace view support_view as
-select 
-usr.USER_ID, usr.FIRST_NAME , usr.LAST_NAME, usr.EMAIL, usr.PHONE_NO,
-car.CAR_REGISTER_ID,
-cat.CAR_CATEGORY_NAME,
-carlist.FEE_RATE, carlist.AVAILABILITY,
-book.BOOKING_STATUS,
-trans.TOTAL_COST,trans.STATUS
-from TRANSACTION trans, USERS usr, CAR_REGISTRATION car, CAR_LISTING carlist,CAR_CATEGORY cat, BOOKING book
-WHERE
-usr.USER_ID = BOOK.USER_ID
-AND
-trans.TRANSACTION_ID = book.TRANSACTION_ID
-AND
-car.CAR_CATEGORY_ID = cat.CAR_CATEGORY_ID
-AND
-carlist.CAR_REGISTER_ID = car.CAR_REGISTER_ID;
-
+select usr.USER_ID, usr.FIRST_NAME, usr.LAST_NAME, 
+book.LISTING_ID, 
+carlist.car_register_id, carlist.fee_rate, 
+car.CAR_NAME, car.car_company, 
+trans.TOTAL_COST from users usr
+join booking book on (usr.USER_ID = book.USER_ID)
+join car_listing carlist on (carlist.listing_id = book.listing_id)
+join car_registration car on (car.car_register_id = carlist.car_register_id)
+join transaction trans on book.transaction_id = trans.transaction_id;
