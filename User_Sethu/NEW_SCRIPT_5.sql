@@ -44,22 +44,22 @@ EXECUTE PCKG_ROLE.INSERT_ROLE('TESTER');
 -- USER_2
 -- ...
 -- USER_16
-EXECUTE PCKG_USERS.INSERT_USER('Sethu', 'sethu@gmail.com', '8573337398', 'Sethu', 'Pag', '12345', '3333333','CCV777', 'TRUE', 'ADDR_7');
-EXECUTE PCKG_USERS.INSERT_USER('Noordeep', 'noordeep@gmail.com', '8574151025', 'Noor', 'Gill', '54321', '9876543','ABFG21', 'TRUE', 'ADDR_9');
-EXECUTE PCKG_USERS.INSERT_USER('Yash', 'yash@gmail.com', '8574151111', 'Yash', 'Jain', '85247', '7412589','INJG21', 'TRUE', 'ADDR_11');
-EXECUTE PCKG_USERS.INSERT_USER('Raj', 'raj@gmail.com', '4156182598', 'Raj', 'Rampal', '56425', '4443333','FRC777', 'TRUE', 'ADDR_8');
-EXECUTE PCKG_USERS.INSERT_USER('Rohan', 'rohan@gmail.com', '8575551025', 'Rohan', 'Jain', '85412', '9898443','INFX21', 'TRUE', 'ADDR_10');
-EXECUTE PCKG_USERS.INSERT_USER('Yohesh', 'yohesh@gmail.com', '8574152211', 'Yogesh', 'Mahato', '254DC', '7412559','AFJG21', 'TRUE', 'ADDR_9');
-EXECUTE PCKG_USERS.INSERT_USER('Sneha', 'sneha@gmail.com', '2572220011', 'Sneha', 'Vaidya', '91024', '8521475','IN2221', 'TRUE', 'ADDR_7');
-EXECUTE PCKG_USERS.INSERT_USER('Suzan', 'suzan@gmail.com', '6983330441', 'Suzan', 'Kumar', '87432', '986933','IN3131', 'TRUE', 'ADDR_8');
-EXECUTE PCKG_USERS.INSERT_USER('Sethu', 'sethu@yahoo.com', '8573337398', 'Sethu', 'Pag', '12345', '4435434','CCV797', 'TRUE', 'ADDR_11');
-EXECUTE PCKG_USERS.INSERT_USER('Noordeep', 'noordeep@yahoo.com', '8574151025', 'Noor', 'Gill', '54321', '9878543','AGG21', 'TRUE', 'ADDR_10');
-EXECUTE PCKG_USERS.INSERT_USER('Yash', 'yash@yahoo.com', '8574151111', 'Yash', 'Jain', '85247', '7413589','INZG21', 'TRUE', 'ADDR_9');
-EXECUTE PCKG_USERS.INSERT_USER('Raj', 'raj@yahoo.com', '4156182598', 'Raj', 'Rampal', '56425', '4443433','FRH777', 'TRUE', 'ADDR_7');
-EXECUTE PCKG_USERS.INSERT_USER('Rohan', 'rohan@yahoo.com', '8575551025', 'Rohan', 'Jain', '85412', '9899443','GNFX21', 'TRUE', 'ADDR_9');
-EXECUTE PCKG_USERS.INSERT_USER('Yohesh', 'yohesh@yahoo.com', '8574152211', 'Yogesh', 'Mahato', '254DC', '7414559','CFJG21', 'TRUE', 'ADDR_9');
-EXECUTE PCKG_USERS.INSERT_USER('Sneha', 'sneha@yahoo.com', '2572220011', 'Sneha', 'Vaidya', '91024', '8521485','UN2221', 'TRUE', 'ADDR_10');
-EXECUTE PCKG_USERS.INSERT_USER('Suzan', 'suzan@yahoo.com', '6983330441', 'Suzan', 'Kumar', '87432', '986963','IG3131', 'TRUE', 'ADDR_11');
+EXECUTE PCKG_USERS.INSERT_USER('Sethu', 'sethu@gmail.com', '8573337398', 'Sethu', 'Pag', '123456', '6987451254','CXCV7743', 'FALSE', 'ADDR_1');
+EXECUTE PCKG_USERS.INSERT_USER('Noordeep', 'noordeep@gmail.com', '8574151025', 'Noor', 'Gill', '54A3C21', '2587412589','ABFG2170', 'FALSE', 'ADDR_2');
+EXECUTE PCKG_USERS.INSERT_USER('Yash', 'yash@gmail.com', '8574151111', 'Yash', 'Jain', '8C52F47', '7412589124','INJ34G21', 'FALSE', 'ADDR_3');
+EXECUTE PCKG_USERS.INSERT_USER('Raj', 'raj@gmail.com', '8576182598', 'Raj', 'Rampal', 'ZQ56425', '4425133458','FRA79701', 'FALSE', 'ADDR_4');
+EXECUTE PCKG_USERS.INSERT_USER('Rohan', 'rohan@gmail.com', '8575551025', 'Rohan', 'Jain', '8Z54W12', '9898443612','INFX2143', 'FALSE', 'ADDR_5');
+EXECUTE PCKG_USERS.INSERT_USER('Yohesh', 'yohesh@gmail.com', '8574152211', 'Yogesh', 'Mahato', '254DCF2', '7412559739','AFJG2176', 'FALSE', 'ADDR_6');
+EXECUTE PCKG_USERS.INSERT_USER('Sneha', 'sneha@gmail.com', '9882220011', 'Sneha', 'Vaidya', 'AV91024', '8521475348','INXA2221', 'FALSE', 'ADDR_7');
+EXECUTE PCKG_USERS.INSERT_USER('Suzan', 'suzan@gmail.com', '9983330441', 'Suzan', 'Kumar', 'VC87432', '9869335461','INL31315', 'FALSE', 'ADDR_8');
+EXECUTE PCKG_USERS.INSERT_USER('Sajag', 'sajag@yahoo.com', '8573337398', 'Sajag', 'Jain', 'AXRT431', '5894435434','ACCVX797', 'FALSE', 'ADDR_9');
+EXECUTE PCKG_USERS.INSERT_USER('Rowen', 'rowen@yahoo.com', '8555751025', 'Rowen', 'Ram', 'AHJ5432', '9878543541','AGG21X40', 'FALSE', 'ADDR_10');
+EXECUTE PCKG_USERS.INSERT_USER('Rohit', 'rohit@yahoo.com', '8961351111', 'Rohit', 'Kumar', 'XXC85247', '7413589661','AFINZG21', 'FALSE', 'ADDR_11');
+EXECUTE PCKG_USERS.INSERT_USER('Rajnesh', 'rajnesh@yahoo.com', '4157772598', 'Rajnesh', 'Jain', 'AFK56425', '8894443433','FRHYT777', 'FALSE', 'ADDR_12');
+EXECUTE PCKG_USERS.INSERT_USER('Ritika', 'ritika@yahoo.com', '8544451035', 'Ritika', 'Rampuri', 'DAZ85412', '9899443885','GNAFJX21', 'FALSE', 'ADDR_13');
+EXECUTE PCKG_USERS.INSERT_USER('Somesh', 'somesh@yahoo.com', '8575512211', 'Somesh', 'Mahato', '254DCX1', '7414559554','CFJG2121', 'FALSE', 'ADDR_14');
+EXECUTE PCKG_USERS.INSERT_USER('Rama', 'rama@yahoo.com', '5572220011', 'Rama', 'Krishna', 'JJZ9102', '8521485663','UN222132', 'FALSE', 'ADDR_15');
+EXECUTE PCKG_USERS.INSERT_USER('Akshay', 'akshay@yahoo.com', '6987630441', 'Akshay', 'Patil', 'AJK87432', '9899869631','IGAX3131', 'FALSE', 'ADDR_16');
 ------------------------------------------------------EMPLOYEE-----------------------------------------------------------
 -- 4th in insert
 -- EMPLOYEE_1
