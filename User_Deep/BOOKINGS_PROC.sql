@@ -35,7 +35,8 @@ create or replace PACKAGE PKG_BOOKING   AS
 
     PROCEDURE BOOKING_COMPLETED(
         vBOOKING_ID IN BOOKING.BOOKING_ID%type,
-        vLISTING_ID IN BOOKING.LISTING_ID%type
+        vLISTING_ID IN BOOKING.LISTING_ID%type,
+        vCOMMENTS IN BOOKING.COMMENTS%type
     );
 
     PROCEDURE BOOKING_PAYMENT_SUCCESS(
@@ -200,8 +201,8 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
                 BOOKING_COMP_EX EXCEPTION;
 
         BEGIN
-            SELECT COUNT(*) INTO BOOKING_STATUS_INPROG FROM BOOKING WHERE BOOKING_STATUS='IN-PROGRESS';
-            SELECT COUNT(*) INTO BOOKING_STATUS_COMP FROM BOOKING WHERE BOOKING_STATUS='COMPLETED';
+            SELECT COUNT(*) INTO BOOKING_STATUS_INPROG FROM BOOKING WHERE BOOKING_STATUS='IN-PROGRESS' AND BOOKING_ID=vBOOKING_ID;
+            SELECT COUNT(*) INTO BOOKING_STATUS_COMP FROM BOOKING WHERE BOOKING_STATUS='COMPLETED' AND BOOKING_ID=vBOOKING_ID;
             SELECT COUNT(*) INTO vIS_BOOKING_PRESENT FROM BOOKING WHERE BOOKING_ID=vBOOKING_ID;
 
             -- CHECK IF BOOKING ID IS BLANK OR NULL
@@ -264,8 +265,8 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
                 INVALID_LISTING_ID_EX EXCEPTION;
 
         BEGIN
-            SELECT COUNT(*) INTO BOOKING_STATUS_INITIAL FROM BOOKING WHERE BOOKING_STATUS='INITIAL';
-            SELECT COUNT(*) INTO BOOKING_STATUS_COMP FROM BOOKING WHERE BOOKING_STATUS='COMPLETED';
+            SELECT COUNT(*) INTO BOOKING_STATUS_INITIAL FROM BOOKING WHERE BOOKING_STATUS='INITIAL' AND BOOKING_ID=vBOOKING_ID;
+            SELECT COUNT(*) INTO BOOKING_STATUS_COMP FROM BOOKING WHERE BOOKING_STATUS='COMPLETED' AND BOOKING_ID=vBOOKING_ID;
 
             -- CHECK IF BOOKING ID IS BLANK OR NULL
             if vBOOKING_ID is NULL or LENGTH(trim(vBOOKING_ID)) IS NULL then
@@ -409,6 +410,8 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
                 dbms_output.put_line('[ERROR] Invalid Input');
             when USER_BLACKLISTED_EX then
                 dbms_output.put_line('[ERROR] User blacklisted. Cannot book a ride');
+            when NO_DATA_EX then
+                dbms_output.put_line('[ERROR] No records found');
     END INSERT_NEW_BOOKING;
 
     -- Procedure to update a booking to IN-PROGRESS
@@ -434,20 +437,27 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
     -- Procedure to update a booking to COMPLETED
     PROCEDURE BOOKING_COMPLETED(
         vBOOKING_ID IN BOOKING.BOOKING_ID%type,
-        vLISTING_ID IN BOOKING.LISTING_ID%type
+        vLISTING_ID IN BOOKING.LISTING_ID%type,
+        vCOMMENTS IN BOOKING.COMMENTS%type
         ) AS
             vDAYS NUMBER(5,2);
             vFEE_RATE NUMBER(5,2);
             vACTUAL_START_DATE TIMESTAMP;
             vTRANSACTION_ID BOOKING.TRANSACTION_ID%TYPE;
             INVALID_INPUT_EX EXCEPTION;
+            NO_DATA_EX EXCEPTION;
         BEGIN
             -- validate BOOKING
         IF BOOKING_COMPLETED_VALIDATION(vBOOKING_ID, vLISTING_ID) = 'NO' THEN
             RAISE INVALID_INPUT_EX;
         END IF;
 
+        BEGIN
         SELECT ACTUAL_START_DATE INTO vACTUAL_START_DATE FROM BOOKING WHERE BOOKING_ID=vBOOKING_ID;
+				EXCEPTION
+					WHEN NO_DATA_FOUND THEN
+					RAISE NO_DATA_EX;
+        END;
 
         vDAYS := CAST(LOCALTIMESTAMP AS DATE) - CAST(vACTUAL_START_DATE AS DATE);
 
@@ -456,18 +466,30 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
                 vDAYS := 1;
             END IF;
 
+        BEGIN
         SELECT FEE_RATE INTO vFEE_RATE FROM CAR_LISTING WHERE LISTING_ID=vLISTING_ID;
+        				EXCEPTION
+					WHEN NO_DATA_FOUND THEN
+					RAISE NO_DATA_EX;
+        END;
 
+        BEGIN
         SELECT TRANSACTION_ID INTO vTRANSACTION_ID FROM BOOKING WHERE BOOKING_ID=vBOOKING_ID;
+        				EXCEPTION
+					WHEN NO_DATA_FOUND THEN
+					RAISE NO_DATA_EX;
+        END;
 
         PKG_TRANSACTION.BODY_TRANSACTION_UPDATE_TABLE(vTRANSACTION_ID,'PENDING', vDAYS * vFEE_RATE);
 
         -- UPDATE THE BOOKING STATUS
-        UPDATE BOOKING SET BOOKING_STATUS='COMPLETED', ACTUAL_END_DATE=LOCALTIMESTAMP WHERE BOOKING_ID=vBOOKING_ID;
+        UPDATE BOOKING SET BOOKING_STATUS='COMPLETED', COMMENTS=vCOMMENTS, ACTUAL_END_DATE=LOCALTIMESTAMP WHERE BOOKING_ID=vBOOKING_ID;
 
         EXCEPTION
             when INVALID_INPUT_EX then
                 dbms_output.put_line('[ERROR] Invalid Input');
+            when NO_DATA_EX then
+                dbms_output.put_line('[ERROR] No records found');
     END BOOKING_COMPLETED;
 
     -- Procedure to update a booking to PAYMENT-SUCCESS
@@ -485,6 +507,7 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
             PAID_EX EXCEPTION;
             INITIAL_EX EXCEPTION;
             IN_PROG_EX EXCEPTION;
+            NO_DATA_EX EXCEPTION;
         BEGIN
             -- validate BOOKING
         IF BOOKING_PAYMENT_VALIDATION(vBOOKING_ID) = 'NO' THEN
@@ -511,8 +534,13 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
         IF IN_PROGRESS != 0 THEN
             RAISE IN_PROG_EX;
         END IF;
-
+        
+        BEGIN
         SELECT TRANSACTION_ID INTO vTRANSACTION_ID FROM BOOKING WHERE BOOKING_ID=vBOOKING_ID;
+        				EXCEPTION
+					WHEN NO_DATA_FOUND THEN
+					RAISE NO_DATA_EX;
+        END;
         PKG_TRANSACTION.BODY_TRANSACTION_UPDATE_TABLE_SUCCESS(vTRANSACTION_ID, 'SUCCESS');
 
         -- UPDATE THE BOOKING STATUS
@@ -529,6 +557,8 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
                 dbms_output.put_line('[ERROR] Booking still in INITIAL state, needs to be completed for payment');
             when IN_PROG_EX then
                 dbms_output.put_line('[ERROR] Booking still in IN-PROGRESS state, needs to be completed for payment');
+            when NO_DATA_EX then
+                dbms_output.put_line('[ERROR] No records found');
     END BOOKING_PAYMENT_SUCCESS;
 
     -- Procedure to update a booking to PAYMENT-FAILED
@@ -546,6 +576,7 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
             PAID_EX EXCEPTION;
             INITIAL_EX EXCEPTION;
             IN_PROG_EX EXCEPTION;
+            NO_DATA_EX EXCEPTION;
         BEGIN
             -- validate BOOKING
         IF BOOKING_PAYMENT_VALIDATION(vBOOKING_ID) = 'NO' THEN
@@ -572,8 +603,13 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
         IF IN_PROGRESS != 0 THEN
             RAISE IN_PROG_EX;
         END IF;
-
+        
+        BEGIN
         SELECT TRANSACTION_ID INTO vTRANSACTION_ID FROM BOOKING WHERE BOOKING_ID=vBOOKING_ID;
+        				EXCEPTION
+					WHEN NO_DATA_FOUND THEN
+					RAISE NO_DATA_EX;
+        END;
         PKG_TRANSACTION.BODY_TRANSACTION_UPDATE_TABLE_SUCCESS(vTRANSACTION_ID, 'FAILED');
 
         -- UPDATE THE BOOKING STATUS
@@ -590,6 +626,8 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
                 dbms_output.put_line('[ERROR] Booking still in INITIAL state, needs to be completed for payment');
             when IN_PROG_EX then
                 dbms_output.put_line('[ERROR] Booking still in IN-PROGRESS state, needs to be completed for payment');
+            when NO_DATA_EX then
+                dbms_output.put_line('[ERROR] No records found');
     END BOOKING_PAYMENT_FAIL;
 
     -- Procedure to cancel a booking
