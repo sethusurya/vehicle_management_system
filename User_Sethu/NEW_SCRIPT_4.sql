@@ -2871,16 +2871,12 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
              raise ex_USER_ID_IN_BOOKING_COUNT;
         END IF;
         
-        IF CHECK_EMAIL_COUNT != 0 THEN 
+        IF USER_USER_ID_IN_BOOKING_COUNT = 0 THEN 
         DELETE FROM USERS WHERE UPPER(EMAIL) = UPPER(vEMAIL);
         END IF; 
         
-        IF CHECK_EMAIL_COUNT = 0 THEN 
-            raise ex_DELETE_USER; 
-        END IF; 
+    
         EXCEPTION
-            when ex_DELETE_USER then
-                dbms_output.put_line('Sorry, USER does not exist !!!');
             when ex_USER_ID_IN_BOOKING_COUNT then 
                 dbms_output.put_line('User exist in Booking table, cant delete !!!');
     END DELETE_USER;
@@ -2905,6 +2901,8 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
         ex_INVALID_ADDRESS_ID EXCEPTION;
         ex_INVALID_EMAIL EXCEPTION;
         ex_INVALID_EMAIL_FOR_UPDATE EXCEPTION;
+        ex_INVALID_PHONE_NO EXCEPTION;
+        ex_INVALID_PASSPORT_NO EXCEPTION;
         
         BEGIN 
         
@@ -2924,7 +2922,7 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
             raise ex_INVALID_PASSWORD;
         end if;
 
-        if vDRIVER_LICENSE is NULL or trim(vDRIVER_LICENSE) is NULL then
+        if vDRIVER_LICENSE is NULL or trim(vDRIVER_LICENSE) is NULL or LENGTH(TRIM(vDRIVER_LICENSE)) != 10 then
             raise ex_INVALID_DL;
         end if;
         
@@ -2932,7 +2930,15 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
             raise ex_INVALID_EMAIL_FOR_UPDATE;
         end if;
         
-        if CHECK_PASSPORT(vPASSPORT) = 'NO' AND  CHECK_DRIVER_LICENSE(vDRIVER_LICENSE) = 'NO' AND CHECK_EMAIL(vEMAIL) = 'NO' then 
+        if vPHONE_NO is NULL or LENGTH(trim(vPHONE_NO)) != 10 then 
+            raise ex_INVALID_PHONE_NO;
+        end if;
+        
+        if vPASSPORT is NULL or LENGTH(trim(vPASSPORT)) < 6 then 
+            raise ex_INVALID_PASSPORT_NO;
+        end if;
+        
+        if CHECK_PASSPORT(vPASSPORT) = 'NO' AND  CHECK_DRIVER_LICENSE(vDRIVER_LICENSE) = 'NO' then 
         UPDATE USERS 
         SET PHONE_NO = vPHONE_NO, FIRST_NAME = vFIRST_NAME, LAST_NAME = vLAST_NAME, PASSWORD = vPASSWORD, DRIVER_LICENSE = vDRIVER_LICENSE, PASSPORT = vPASSPORT, BLACKLISTED = vBLACKLISTED
         WHERE UPPER(EMAIL) = UPPER(vEMAIL);
@@ -2948,9 +2954,13 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
             when ex_INVALID_PASSWORD then
                 dbms_output.put_line('Password should be greater than 5 and should not be null !!!');
             when ex_INVALID_DL then
-                dbms_output.put_line('DRIVER LICENSE number already exist !!!');
+                dbms_output.put_line('DRIVER LICENSE number is less than 10 digits or invalid !!!');
             when ex_INVALID_EMAIL_FOR_UPDATE then
                 dbms_output.put_line('Email is null or invalid !!!');
+             when ex_INVALID_PASSPORT_NO then 
+                dbms_output.put_line('Passport is NULL or invalid !!!'); 
+             when ex_INVALID_PHONE_NO then 
+                dbms_output.put_line('Phone number is NULL or invalid !!!'); 
         END UPDATE_USER;
         
         FUNCTION CHECK_DRIVER_LICENSE
