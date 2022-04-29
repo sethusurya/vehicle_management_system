@@ -1769,8 +1769,8 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
         if vbooking_count = 0 then
             Delete from  car_listing where CAR_REGISTER_ID = TRIM(UPPER(vCAR_REGISTER_ID));
             Delete from CAR_REGISTRATION where CAR_REGISTER_ID = TRIM(UPPER(vCAR_REGISTER_ID));
-            Delete from  parking where address_id = TRIM(UPPER(vaddress_id));
-            Delete from  address where address_id = TRIM(UPPER(vaddress_id));
+            -- Delete from  parking where address_id = TRIM(UPPER(vaddress_id));
+            -- Delete from  address where address_id = TRIM(UPPER(vaddress_id));
             dbms_output.put_line('deleted data successfully');
         else
              dbms_output.put_line('On going booking');
@@ -2008,7 +2008,13 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_CAR_LISTING AS
         vCAR_PARKING_ID IN CAR_LISTING.PARKING_ID%type 
     ) AS
     ex_INVALID EXCEPTION;
+    ex_LISTING_EXISTS EXCEPTION;
+    vCount Number(5);
     BEGIN
+        select count(*) into vCount from car_listing where UPPER(car_register_id) = UPPER(vCAR_REGISTER_ID);
+        IF vCount > 0 THEN
+            RAISE ex_LISTING_EXISTS
+        END IF;
         IF PROCESS_CAR_LISTING(vAVAILABILITY, SYSDATE,vFEE_RATE,vCAR_REGISTER_ID, vCAR_PARKING_ID) = 'NO' THEN
             RAISE ex_INVALID;
         END IF;
@@ -2025,6 +2031,8 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_CAR_LISTING AS
     EXCEPTION
         WHEN ex_INVALID THEN
             dbms_output.put_line('INVALID CAR LISTING DATA!!!');
+        WHEN ex_LISTING_EXISTS THEN
+            dbms_output.put_line('LISTING ALREADY EXISTS FOR REGISTRATION ID!!!!');
     END INSERT_CAR_LISTING;
 
     PROCEDURE UPDATE_CAR_LISTING_PRICE(
