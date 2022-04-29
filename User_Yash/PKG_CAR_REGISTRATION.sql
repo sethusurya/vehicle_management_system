@@ -417,8 +417,8 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
         if vbooking_count = 0 then
             Delete from  car_listing where CAR_REGISTER_ID = TRIM(UPPER(vCAR_REGISTER_ID));
             Delete from CAR_REGISTRATION where CAR_REGISTER_ID = TRIM(UPPER(vCAR_REGISTER_ID));
-            Delete from  parking where address_id = TRIM(UPPER(vaddress_id));
-            Delete from  address where address_id = TRIM(UPPER(vaddress_id));
+            -- Delete from  parking where address_id = TRIM(UPPER(vaddress_id));
+            -- Delete from  address where address_id = TRIM(UPPER(vaddress_id));
             dbms_output.put_line('deleted data successfully');
         else
              dbms_output.put_line('On going booking');
