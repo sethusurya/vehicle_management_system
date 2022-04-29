@@ -1,4 +1,4 @@
-select cc.car_category_name, 'Total', count(*) from BOOKING b
+select cc.car_category_name, 'Category Name VS Total', count(*) from BOOKING b
 LEFT JOIN car_listing Cl
 on cl.listing_id = b.listing_id
 LEFT JOIN CAR_REGISTRATION CR
