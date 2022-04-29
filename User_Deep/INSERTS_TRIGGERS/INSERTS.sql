@@ -182,6 +182,7 @@ ALTER TABLE AUDIT_DATA_ROLES MODIFY (USERNAME NOT NULL ENABLE);
 ALTER TABLE AUDIT_DATA_ROLES MODIFY (TABLE_NAME NOT NULL ENABLE);
 
 
+
 create sequence AUDIT_BOOKING_ID_SEQ start with 1 increment by 1 order;
 create sequence AUDIT_COUNTRY_ID_SEQ start with 1 increment by 1 order;
 create sequence AUDIT_CITY_ID_SEQ start with 1 increment by 1 order;

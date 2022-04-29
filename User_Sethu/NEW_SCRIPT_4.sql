@@ -397,6 +397,21 @@ CREATE OR REPLACE EDITIONABLE PACKAGE PCKG_USERS  AS
         vPASSPORT IN USERS.PASSPORT%type,
         vBLACKLISTED IN USERS.BLACKLISTED%type
         );
+        FUNCTION CHECK_DRIVER_LICENSE
+        (vDRIVER_LICENSE IN USERS.DRIVER_LICENSE%type) 
+        RETURN VARCHAR2; 
+        
+        FUNCTION CHECK_PASSPORT
+        (vPASSPORT IN USERS.PASSPORT%type) 
+        RETURN VARCHAR2;
+        
+        FUNCTION CHECK_ADDRESS_ID
+        (vADDRESS_ID IN ADDRESS.ADDRESS_ID%type) 
+        RETURN VARCHAR2;
+        
+        FUNCTION CHECK_EMAIL
+        (vEMAIL IN USERS.EMAIL%type) 
+        RETURN VARCHAR2;
 END PCKG_USERS;
 /
 
@@ -2727,6 +2742,10 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
         ex_INVALID_PASSWORD EXCEPTION;
         ex_INVALID_DRIVER_LICENSE EXCEPTION;
         ex_INVALID_ADDRESS_ID EXCEPTION;
+        ex_INVALID_PHONE_NUMBER EXCEPTION;
+        ex_INVALID_PASSPORT_NUM EXCEPTION;
+        ex_INVALID_EMAIL EXCEPTION;
+        ex_INVALID_PASSPORT_NUMBER EXCEPTION;
 
         CHECK_ADDRESS_COUNT NUMBER(38);
         CHECK_EMAIL_COUNT NUMBER(38);
@@ -2776,18 +2795,30 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
             raise ex_INVALID_LAST_NAME;
         end if;
 
-        if vPASSWORD is NULL or LENGTH(TRIM(vPASSWORD)) > 5 then
+        if vPASSWORD is NULL or LENGTH(TRIM(vPASSWORD)) < 5 then
             raise ex_INVALID_PASSWORD;
         end if;
 
-        if vDRIVER_LICENSE is NULL then
+        if vDRIVER_LICENSE is NULL  or LENGTH(TRIM(vDRIVER_LICENSE)) != 10 then
             raise ex_INVALID_DRIVER_LICENSE;
         end if;
         
-        if vADDRESS_ID is NULL or vADDRESS_ID = '' then
+        if vADDRESS_ID is NULL or vADDRESS_ID = '' or CHECK_ADDRESS_ID(vADDRESS_ID) = 'NO' then
             raise ex_INVALID_ADDRESS_ID;
         end if;
-
+        
+        if vPHONE_NO is NULL or LENGTH(trim(vPHONE_NO)) != 10 then 
+            raise ex_INVALID_PHONE_NUMBER;
+        end if;
+        
+        if vPASSPORT is NULL or LENGTH(trim(vPASSPORT)) < 6 then 
+            raise ex_INVALID_PASSPORT_NUM;
+        end if;
+        
+        if vEMAIL is NULL or LENGTH(trim(vEMAIL)) = 0 then 
+            raise ex_INVALID_EMAIL;
+        end if;
+        
         IF CHECK_EMAIL_COUNT = 0 AND CHECK_USER_NAME_COUNT = 0 AND CHECK_DL_COUNT = 0 AND CHECK_PASSPORT_COUNT = 0 THEN 
         INSERT INTO USERS(USER_ID, PASSWORD, USER_NAME, EMAIL, PHONE_NO, FIRST_NAME, LAST_NAME, DATE_OF_JOINING, DRIVER_LICENSE, PASSPORT, BLACKLISTED, ADDRESS_ID)
         VALUES
@@ -2805,6 +2836,16 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
                 dbms_output.put_line('Password should be greater than 5 and should not be null !!!');
             when ex_INVALID_DRIVER_LICENSE then
                 dbms_output.put_line('INVALID DRIVER LICENSE NUMBER!!!');
+            when ex_INVALID_ADDRESS_ID then
+                dbms_output.put_line('INVALID ADDRESS ID NUMBER OR IT DOES NOT EXIST!!!');
+            when ex_INVALID_PHONE_NUMBER then 
+                dbms_output.put_line('INVALID phone number!!!');
+            when ex_INVALID_PASSPORT_NUMBER then 
+                dbms_output.put_line('Either passport number is invalid or its smaller tan 5 !!!');
+            when ex_INVALID_EMAIL then 
+                dbms_output.put_line('Email is NULL or invalid !!!');
+            when ex_INVALID_PASSPORT_NUM then 
+                dbms_output.put_line('Passport is NULL or invalid !!!');  
     END INSERT_USER;
     
     PROCEDURE DELETE_USER(
@@ -2812,26 +2853,44 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
         ) AS     
         
         ex_DELETE_USER EXCEPTION; 
+        ex_USER_EXIST_IN_BOOKING EXCEPTION;
+        ex_USER_ID_IN_BOOKING_COUNT EXCEPTION;
+        
         CHECK_EMAIL_COUNT NUMBER(38);
+        USER_USER_ID_IN_BOOKING_COUNT NUMBER(38);
+        USER_ID_VAL_FROM_USER_TBL VARCHAR2(500);
+        USER_EXIST_IN_BOOKING_COUNT NUMBER(38);
+        
     BEGIN
         
         BEGIN
-        SELECT COUNT(EMAIL) INTO CHECK_EMAIL_COUNT FROM USERS WHERE EMAIL = vEMAIL; 
+        SELECT USER_ID INTO USER_ID_VAL_FROM_USER_TBL FROM USERS WHERE EMAIL = vEMAIL; 
         EXCEPTION
             WHEN NO_DATA_FOUND THEN
-            CHECK_EMAIL_COUNT := 0;
+            USER_ID_VAL_FROM_USER_TBL := 0;
         END;
         
-        IF CHECK_EMAIL_COUNT != 0 THEN 
-        DELETE FROM USERS WHERE EMAIL = vEMAIL;
+        IF USER_ID_VAL_FROM_USER_TBL is NOT NULL or  USER_ID_VAL_FROM_USER_TBL != '' then
+        BEGIN
+        SELECT COUNT(USER_ID) INTO USER_USER_ID_IN_BOOKING_COUNT FROM BOOKING WHERE USER_ID = USER_ID_VAL_FROM_USER_TBL; 
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+            USER_USER_ID_IN_BOOKING_COUNT := 0;
+        END;
+        END IF;
+    
+        IF USER_USER_ID_IN_BOOKING_COUNT != 0 THEN 
+             raise ex_USER_ID_IN_BOOKING_COUNT;
+        END IF;
+        
+        IF USER_USER_ID_IN_BOOKING_COUNT = 0 THEN 
+        DELETE FROM USERS WHERE UPPER(EMAIL) = UPPER(vEMAIL);
         END IF; 
         
-        IF CHECK_EMAIL_COUNT = 0 THEN 
-            raise ex_DELETE_USER; 
-        END IF; 
+    
         EXCEPTION
-            when ex_DELETE_USER then
-                dbms_output.put_line('Sorry, USER does not exist !!!');
+            when ex_USER_ID_IN_BOOKING_COUNT then 
+                dbms_output.put_line('User exist in Booking table, cant delete !!!');
     END DELETE_USER;
     
     PROCEDURE UPDATE_USER(
@@ -2850,8 +2909,12 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
         ex_INVALID_USER_NAME EXCEPTION;
         ex_INVALID_LAST_NAME EXCEPTION;
         ex_INVALID_PASSWORD EXCEPTION;
-        ex_INVALID_DRIVER_LICENSE EXCEPTION;
+        ex_INVALID_DL EXCEPTION;
         ex_INVALID_ADDRESS_ID EXCEPTION;
+        ex_INVALID_EMAIL EXCEPTION;
+        ex_INVALID_EMAIL_FOR_UPDATE EXCEPTION;
+        ex_INVALID_PHONE_NO EXCEPTION;
+        ex_INVALID_PASSPORT_NO EXCEPTION;
         
         BEGIN 
         
@@ -2867,17 +2930,31 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
             raise ex_INVALID_LAST_NAME;
         end if;
 
-        if vPASSWORD is NULL or LENGTH(TRIM(vPASSWORD)) < 5  or trim(vPASSWORD) is NULL then
+        if vPASSWORD is NULL or LENGTH(TRIM(vPASSWORD)) < 5 then
             raise ex_INVALID_PASSWORD;
         end if;
 
-        if vDRIVER_LICENSE is NULL or trim(vDRIVER_LICENSE) is NULL then
-            raise ex_INVALID_DRIVER_LICENSE;
+        if vDRIVER_LICENSE is NULL or trim(vDRIVER_LICENSE) is NULL or LENGTH(TRIM(vDRIVER_LICENSE)) != 10 then
+            raise ex_INVALID_DL;
         end if;
         
+        if vEMAIL is NULL or LENGTH(trim(vEMAIL)) = 0 then 
+            raise ex_INVALID_EMAIL_FOR_UPDATE;
+        end if;
+        
+        if vPHONE_NO is NULL or LENGTH(trim(vPHONE_NO)) != 10 then 
+            raise ex_INVALID_PHONE_NO;
+        end if;
+        
+        if vPASSPORT is NULL or LENGTH(trim(vPASSPORT)) < 6 then 
+            raise ex_INVALID_PASSPORT_NO;
+        end if;
+        
+        if CHECK_PASSPORT(vPASSPORT) = 'NO' AND  CHECK_DRIVER_LICENSE(vDRIVER_LICENSE) = 'NO' then 
         UPDATE USERS 
         SET PHONE_NO = vPHONE_NO, FIRST_NAME = vFIRST_NAME, LAST_NAME = vLAST_NAME, PASSWORD = vPASSWORD, DRIVER_LICENSE = vDRIVER_LICENSE, PASSPORT = vPASSPORT, BLACKLISTED = vBLACKLISTED
-        WHERE EMAIL = vEMAIL;
+        WHERE UPPER(EMAIL) = UPPER(vEMAIL);
+        end if;
         
         EXCEPTION
             when ex_INVALID_FIRST_NAME then
@@ -2888,9 +2965,111 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
                 dbms_output.put_line('USER name is invalid !!!');
             when ex_INVALID_PASSWORD then
                 dbms_output.put_line('Password should be greater than 5 and should not be null !!!');
-            when ex_INVALID_DRIVER_LICENSE then
-                dbms_output.put_line('INVALID DRIVER LICENSE NUMBER!!!');
+            when ex_INVALID_DL then
+                dbms_output.put_line('DRIVER LICENSE number is less than 10 digits or invalid !!!');
+            when ex_INVALID_EMAIL_FOR_UPDATE then
+                dbms_output.put_line('Email is null or invalid !!!');
+             when ex_INVALID_PASSPORT_NO then 
+                dbms_output.put_line('Passport is NULL or invalid !!!'); 
+             when ex_INVALID_PHONE_NO then 
+                dbms_output.put_line('Phone number is NULL or invalid !!!'); 
         END UPDATE_USER;
+        
+        FUNCTION CHECK_DRIVER_LICENSE
+        (vDRIVER_LICENSE IN USERS.DRIVER_LICENSE%type) 
+        RETURN VARCHAR2 AS 
+        
+        CHECK_DRIVER_LICENSE_COUNT NUMBER(38);
+        BEGIN
+        
+            BEGIN
+            SELECT COUNT(DRIVER_LICENSE) INTO CHECK_DRIVER_LICENSE_COUNT FROM USERS  WHERE DRIVER_LICENSE = vDRIVER_LICENSE;
+            EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+            CHECK_DRIVER_LICENSE_COUNT := 0;
+            END;
+            
+            IF CHECK_DRIVER_LICENSE_COUNT = 0 THEN 
+                RETURN 'NO';
+            END IF; 
+            
+            IF CHECK_DRIVER_LICENSE_COUNT != 0 THEN 
+                dbms_output.put_line('DRIVER LICENSE already exist!!!');
+            END IF; 
+        
+        RETURN 'YES';
+        END CHECK_DRIVER_LICENSE; 
+        
+        FUNCTION CHECK_PASSPORT
+        (vPASSPORT IN USERS.PASSPORT%type) 
+        RETURN VARCHAR2 AS 
+        
+        CHECK_PASSPORT_COUNT NUMBER(38);
+        BEGIN
+            BEGIN
+            SELECT COUNT(PASSPORT) INTO CHECK_PASSPORT_COUNT FROM USERS  WHERE PASSPORT = vPASSPORT;
+            EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+            CHECK_PASSPORT_COUNT := 0;
+            END;
+            
+            IF CHECK_PASSPORT_COUNT = 0 THEN 
+                RETURN 'NO';
+            END IF; 
+            
+            IF CHECK_PASSPORT_COUNT != 0 THEN 
+                dbms_output.put_line('PASSPORT already exist!!!');
+            END IF; 
+        
+        RETURN 'YES';
+        END CHECK_PASSPORT; 
+        
+        FUNCTION CHECK_ADDRESS_ID
+        (vADDRESS_ID IN ADDRESS.ADDRESS_ID%type) 
+        RETURN VARCHAR2 AS 
+        
+        CHECK_ADDRESS_ID NUMBER(38);
+        BEGIN
+        
+            BEGIN
+            SELECT COUNT(ADDRESS_ID) INTO CHECK_ADDRESS_ID FROM ADDRESS  WHERE ADDRESS_ID = vADDRESS_ID;
+            EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+            CHECK_ADDRESS_ID := 0;
+            END;
+            
+            IF CHECK_ADDRESS_ID = 0 THEN 
+                dbms_output.put_line('ADDRESS ID does not exist !!!');
+                RETURN 'NO';
+            END IF;    
+        
+        RETURN 'YES';
+        END CHECK_ADDRESS_ID; 
+        
+        FUNCTION CHECK_EMAIL
+        (vEMAIL IN USERS.EMAIL%type) 
+        RETURN VARCHAR2 AS 
+        
+        CHECK_EMAIL_COUNT NUMBER(38);
+        BEGIN
+        
+            BEGIN
+            SELECT COUNT(EMAIL) INTO CHECK_EMAIL_COUNT FROM USERS WHERE EMAIL = vEMAIL;
+            EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+            CHECK_EMAIL_COUNT := 0;
+            END;
+            
+            IF CHECK_EMAIL_COUNT = 0 THEN 
+                RETURN 'NO';
+           END IF;    
+            
+            IF CHECK_EMAIL_COUNT != 0 THEN 
+                dbms_output.put_line('EMAIL ID ALREADY EXIST !!!');
+            END IF; 
+        
+        RETURN 'YES';
+        END CHECK_EMAIL; 
 END PCKG_USERS;
 /
 
