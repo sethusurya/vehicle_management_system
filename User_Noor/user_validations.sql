@@ -238,6 +238,8 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
         ex_INVALID_ADDRESS_ID EXCEPTION;
         ex_INVALID_EMAIL EXCEPTION;
         ex_INVALID_EMAIL_FOR_UPDATE EXCEPTION;
+        ex_INVALID_PHONE_NO EXCEPTION;
+        ex_INVALID_PASSPORT_NO EXCEPTION;
         
         BEGIN 
         
@@ -257,7 +259,7 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
             raise ex_INVALID_PASSWORD;
         end if;
 
-        if vDRIVER_LICENSE is NULL or trim(vDRIVER_LICENSE) is NULL then
+        if vDRIVER_LICENSE is NULL or trim(vDRIVER_LICENSE) is NULL or LENGTH(TRIM(vDRIVER_LICENSE)) != 10 then
             raise ex_INVALID_DL;
         end if;
         
@@ -265,7 +267,15 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
             raise ex_INVALID_EMAIL_FOR_UPDATE;
         end if;
         
-        if CHECK_PASSPORT(vPASSPORT) = 'NO' AND  CHECK_DRIVER_LICENSE(vDRIVER_LICENSE) = 'NO' AND CHECK_EMAIL(vEMAIL) = 'NO' then 
+        if vPHONE_NO is NULL or LENGTH(trim(vPHONE_NO)) != 10 then 
+            raise ex_INVALID_PHONE_NO;
+        end if;
+        
+        if vPASSPORT is NULL or LENGTH(trim(vPASSPORT)) < 6 then 
+            raise ex_INVALID_PASSPORT_NO;
+        end if;
+        
+        if CHECK_PASSPORT(vPASSPORT) = 'NO' AND  CHECK_DRIVER_LICENSE(vDRIVER_LICENSE) = 'NO' then 
         UPDATE USERS 
         SET PHONE_NO = vPHONE_NO, FIRST_NAME = vFIRST_NAME, LAST_NAME = vLAST_NAME, PASSWORD = vPASSWORD, DRIVER_LICENSE = vDRIVER_LICENSE, PASSPORT = vPASSPORT, BLACKLISTED = vBLACKLISTED
         WHERE UPPER(EMAIL) = UPPER(vEMAIL);
@@ -281,9 +291,13 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
             when ex_INVALID_PASSWORD then
                 dbms_output.put_line('Password should be greater than 5 and should not be null !!!');
             when ex_INVALID_DL then
-                dbms_output.put_line('DRIVER LICENSE number already exist !!!');
+                dbms_output.put_line('DRIVER LICENSE number is less than 10 digits or invalid !!!');
             when ex_INVALID_EMAIL_FOR_UPDATE then
                 dbms_output.put_line('Email is null or invalid !!!');
+             when ex_INVALID_PASSPORT_NO then 
+                dbms_output.put_line('Passport is NULL or invalid !!!'); 
+             when ex_INVALID_PHONE_NO then 
+                dbms_output.put_line('Phone number is NULL or invalid !!!'); 
         END UPDATE_USER;
         
         FUNCTION CHECK_DRIVER_LICENSE
@@ -384,19 +398,27 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
 END PCKG_USERS;
 /
 
-EXECUTE PCKG_USERS.INSERT_USER('Sethu', 'sethu@gmail.com', '8573337398', 'Sethu', 'Pag', '123456', '6987451254','CXCV7743', 'FALSE', 'ADDR_1');
-EXECUTE PCKG_USERS.INSERT_USER('Noordeep', 'noordeep@gmail.com', '8574151025', 'Noor', 'Gill', '54A3C21', '2587412589','ABFG2170', 'FALSE', 'ADDR_2');
-EXECUTE PCKG_USERS.INSERT_USER('Yash', 'yash@gmail.com', '8574151111', 'Yash', 'Jain', '8C52F47', '7412589124','INJ34G21', 'FALSE', 'ADDR_3');
-EXECUTE PCKG_USERS.INSERT_USER('Raj', 'raj@gmail.com', '8576182598', 'Raj', 'Rampal', 'ZQ56425', '4425133458','FRA79701', 'FALSE', 'ADDR_4');
-EXECUTE PCKG_USERS.INSERT_USER('Rohan', 'rohan@gmail.com', '8575551025', 'Rohan', 'Jain', '8Z54W12', '9898443612','INFX2143', 'FALSE', 'ADDR_5');
-EXECUTE PCKG_USERS.INSERT_USER('Yohesh', 'yohesh@gmail.com', '8574152211', 'Yogesh', 'Mahato', '254DCF2', '7412559739','AFJG2176', 'FALSE', 'ADDR_6');
-EXECUTE PCKG_USERS.INSERT_USER('Sneha', 'sneha@gmail.com', '9882220011', 'Sneha', 'Vaidya', 'AV91024', '8521475348','INXA2221', 'FALSE', 'ADDR_7');
-EXECUTE PCKG_USERS.INSERT_USER('Suzan', 'suzan@gmail.com', '9983330441', 'Suzan', 'Kumar', 'VC87432', '9869335461','INL31315', 'FALSE', 'ADDR_8');
-EXECUTE PCKG_USERS.INSERT_USER('Sajag', 'sajag@yahoo.com', '8573337398', 'Sajag', 'Jain', 'AXRT431', '5894435434','ACCVX797', 'FALSE', 'ADDR_9');
-EXECUTE PCKG_USERS.INSERT_USER('Rowen', 'rowen@yahoo.com', '8555751025', 'Rowen', 'Ram', 'AHJ5432', '9878543541','AGG21X40', 'FALSE', 'ADDR_10');
-EXECUTE PCKG_USERS.INSERT_USER('Rohit', 'rohit@yahoo.com', '8961351111', 'Rohit', 'Kumar', 'XXC85247', '7413589661','AFINZG21', 'FALSE', 'ADDR_11');
-EXECUTE PCKG_USERS.INSERT_USER('Rajnesh', 'rajnesh@yahoo.com', '4157772598', 'Rajnesh', 'Jain', 'AFK56425', '8894443433','FRHYT777', 'FALSE', 'ADDR_12');
-EXECUTE PCKG_USERS.INSERT_USER('Ritika', 'ritika@yahoo.com', '8544451035', 'Ritika', 'Rampuri', 'DAZ85412', '9899443885','GNAFJX21', 'FALSE', 'ADDR_13');
-EXECUTE PCKG_USERS.INSERT_USER('Somesh', 'somesh@yahoo.com', '8575512211', 'Somesh', 'Mahato', '254DCX1', '7414559554','CFJG2121', 'FALSE', 'ADDR_14');
-EXECUTE PCKG_USERS.INSERT_USER('Rama', 'rama@yahoo.com', '5572220011', 'Rama', 'Krishna', 'JJZ9102', '8521485663','UN222132', 'FALSE', 'ADDR_15');
-EXECUTE PCKG_USERS.INSERT_USER('Akshay', 'akshay@yahoo.com', '6987630441', 'Akshay', 'Patil', 'AJK87432', '9899869631','IGAX3131', 'FALSE', 'ADDR_16');
+
+--insert users
+--EXECUTE PCKG_USERS.INSERT_USER('Sethu', 'sethu@gmail.com', '8573337398', 'Sethu', 'Pag', '123456', '6987451254','CXCV7743', 'FALSE', 'ADDR_1');
+--EXECUTE PCKG_USERS.INSERT_USER('Noordeep', 'noordeep@gmail.com', '8574151025', 'Noor', 'Gill', '54A3C21', '2587412589','ABFG2170', 'FALSE', 'ADDR_2');
+--EXECUTE PCKG_USERS.INSERT_USER('Yash', 'yash@gmail.com', '8574151111', 'Yash', 'Jain', '8C52F47', '7412589124','INJ34G21', 'FALSE', 'ADDR_3');
+--EXECUTE PCKG_USERS.INSERT_USER('Raj', 'raj@gmail.com', '8576182598', 'Raj', 'Rampal', 'ZQ56425', '4425133458','FRA79701', 'FALSE', 'ADDR_4');
+--EXECUTE PCKG_USERS.INSERT_USER('Rohan', 'rohan@gmail.com', '8575551025', 'Rohan', 'Jain', '8Z54W12', '9898443612','INFX2143', 'FALSE', 'ADDR_5');
+--EXECUTE PCKG_USERS.INSERT_USER('Yohesh', 'yohesh@gmail.com', '8574152211', 'Yogesh', 'Mahato', '254DCF2', '7412559739','AFJG2176', 'FALSE', 'ADDR_6');
+--EXECUTE PCKG_USERS.INSERT_USER('Sneha', 'sneha@gmail.com', '9882220011', 'Sneha', 'Vaidya', 'AV91024', '8521475348','INXA2221', 'FALSE', 'ADDR_7');
+--EXECUTE PCKG_USERS.INSERT_USER('Suzan', 'suzan@gmail.com', '9983330441', 'Suzan', 'Kumar', 'VC87432', '9869335461','INL31315', 'FALSE', 'ADDR_8');
+--EXECUTE PCKG_USERS.INSERT_USER('Sajag', 'sajag@yahoo.com', '8573337398', 'Sajag', 'Jain', 'AXRT431', '5894435434','ACCVX797', 'FALSE', 'ADDR_9');
+--EXECUTE PCKG_USERS.INSERT_USER('Rowen', 'rowen@yahoo.com', '8555751025', 'Rowen', 'Ram', 'AHJ5432', '9878543541','AGG21X40', 'FALSE', 'ADDR_10');
+--EXECUTE PCKG_USERS.INSERT_USER('Rohit', 'rohit@yahoo.com', '8961351111', 'Rohit', 'Kumar', 'XXC85247', '7413589661','AFINZG21', 'FALSE', 'ADDR_11');
+--EXECUTE PCKG_USERS.INSERT_USER('Rajnesh', 'rajnesh@yahoo.com', '4157772598', 'Rajnesh', 'Jain', 'AFK56425', '8894443433','FRHYT777', 'FALSE', 'ADDR_12');
+--EXECUTE PCKG_USERS.INSERT_USER('Ritika', 'ritika@yahoo.com', '8544451035', 'Ritika', 'Rampuri', 'DAZ85412', '9899443885','GNAFJX21', 'FALSE', 'ADDR_13');
+--EXECUTE PCKG_USERS.INSERT_USER('Somesh', 'somesh@yahoo.com', '8575512211', 'Somesh', 'Mahato', '254DCX1', '7414559554','CFJG2121', 'FALSE', 'ADDR_14');
+--EXECUTE PCKG_USERS.INSERT_USER('Rama', 'rama@yahoo.com', '5572220011', 'Rama', 'Krishna', 'JJZ9102', '8521485663','UN222132', 'FALSE', 'ADDR_15');
+--EXECUTE PCKG_USERS.INSERT_USER('Akshay', 'akshay@yahoo.com', '6987630441', 'Akshay', 'Patil', 'AJK87432', '9899869631','IGAX3131', 'FALSE', 'ADDR_16');
+
+-- update a user
+--EXECUTE PCKG_USERS.UPDATE_USER('Sethua', 'sethu@gmail.com', '9893055067', 'Sethua', 'Zamp', 'AAXJD6', '88541257', 'CKCJF126', 'FALSE');
+
+-- Delete a user
+--EXECUTE PCKG_USERS.DELETE_USER('sai@gmail.COM');
