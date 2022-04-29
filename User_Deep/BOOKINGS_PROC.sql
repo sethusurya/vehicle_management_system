@@ -52,8 +52,9 @@ create or replace PACKAGE PKG_BOOKING   AS
     ) RETURN VARCHAR2;
 
 END PKG_BOOKING;
-
 /
+
+
 
 create or replace PACKAGE BODY PKG_BOOKING   AS
 
@@ -342,9 +343,12 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
             vDAYS NUMBER(5,2);
             EXISTING_BOOKING NUMBER;
             vFEE_RATE NUMBER(5,2);
+			vBLACKLISTED USERS.BLACKLISTED%TYPE;
             FETCH_TRANSACTION_ID TRANSACTION.TRANSACTION_ID%TYPE;
             EXSTING_BOOKING_EX EXCEPTION;
             INVALID_INPUT_EX EXCEPTION;
+			NO_DATA_EX EXCEPTION;
+			USER_BLACKLISTED_EX EXCEPTION;
         BEGIN
             SELECT COUNT(*) INTO EXISTING_BOOKING FROM BOOKING WHERE USER_ID=vUSER_ID AND BOOKING_STATUS IN ('INITIAL', 'IN-PROGRESS', 'COMPLETED', 'PAYMENT_FAILED');
 
@@ -357,6 +361,18 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
         IF NEW_BOOKING_VALIDATION(vCREATED_START_DATE, vCREATED_END_DATE, vUSER_ID, vLISTING_ID) = 'NO' THEN
             RAISE INVALID_INPUT_EX;
         END IF;
+
+			BEGIN
+				SELECT BLACKLISTED INTO vBLACKLISTED FROM USERS WHERE USER_ID=vUSER_ID;
+				EXCEPTION
+					WHEN NO_DATA_FOUND THEN
+					RAISE NO_DATA_EX;
+			END;
+
+
+			if (vBLACKLISTED is not NULL or LENGTH(trim(vBLACKLISTED))IS not NULL) and upper(trim(vBLACKLISTED)) = 'TRUE' then
+                raise USER_BLACKLISTED_EX;
+            end if;
 
             -- CALCULATE THE NUMBER OF DAYS OF THE BOOKING
             vDAYS := CAST(vCREATED_END_DATE AS DATE) - CAST(vCREATED_START_DATE AS DATE);
@@ -381,6 +397,8 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
                 dbms_output.put_line('[ERROR] There is an open booking or a pending payment for this customer which needs to be taken care of before booking another ride');
             when INVALID_INPUT_EX then
                 dbms_output.put_line('[ERROR] Invalid Input');
+            when USER_BLACKLISTED_EX then
+                dbms_output.put_line('[ERROR] User blacklisted. Cannot book a ride');
     END INSERT_NEW_BOOKING;
 
     PROCEDURE BOOKING_IN_PROGRESS(
@@ -561,3 +579,4 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
     END BOOKING_PAYMENT_FAIL;
 
 END PKG_BOOKING;
+/
