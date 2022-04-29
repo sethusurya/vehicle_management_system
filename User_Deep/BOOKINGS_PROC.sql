@@ -116,19 +116,19 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
             end if;
 
             -- CHECK IF CREATED_START_DATE IS GREATER THAN CURRENT_DATE
-            if COMPARE_TIMESTAMP(vCREATED_START_DATE, SYSTIMESTAMP ) < 0 then
-                raise CREATED_START_DATE_LESS_THAN_SYS_EX;
-            end if;
+            -- if COMPARE_TIMESTAMP(vCREATED_START_DATE, SYSTIMESTAMP ) < 0 then
+            --     raise CREATED_START_DATE_LESS_THAN_SYS_EX;
+            -- end if;
 
             -- CHECK IF CREATED_START_DATE IS LESS THAN CREATED_END_DATE
-            if COMPARE_TIMESTAMP(vCREATED_END_DATE, vCREATED_START_DATE ) < 0 then
-                raise CREATED_START_DATE_SMALLER_EX;
-            end if;
+            -- if COMPARE_TIMESTAMP(vCREATED_END_DATE, vCREATED_START_DATE ) < 0 then
+            --     raise CREATED_START_DATE_SMALLER_EX;
+            -- end if;
 
             -- CHECK IF CREATED_END_DATE IS GREATER THAN CURRENT_DATE
-            if COMPARE_TIMESTAMP(vCREATED_END_DATE, SYSTIMESTAMP ) < 0 then
-                raise CREATED_END_DATE_LESS_THAN_SYS_EX;
-            end if;
+            -- if COMPARE_TIMESTAMP(vCREATED_END_DATE, SYSTIMESTAMP ) < 0 then
+            --     raise CREATED_END_DATE_LESS_THAN_SYS_EX;
+            -- end if;
 
             RETURN 'YES';
         EXCEPTION
