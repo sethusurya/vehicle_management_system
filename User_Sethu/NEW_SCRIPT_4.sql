@@ -2223,19 +2223,19 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
             end if;
 
             -- CHECK IF CREATED_START_DATE IS GREATER THAN CURRENT_DATE
-            if COMPARE_TIMESTAMP(vCREATED_START_DATE, SYSTIMESTAMP ) < 0 then
-                raise CREATED_START_DATE_LESS_THAN_SYS_EX;
-            end if;
+--            if COMPARE_TIMESTAMP(vCREATED_START_DATE, SYSTIMESTAMP ) < 0 then
+--                raise CREATED_START_DATE_LESS_THAN_SYS_EX;
+--            end if;
 
             -- CHECK IF CREATED_START_DATE IS LESS THAN CREATED_END_DATE
-            if COMPARE_TIMESTAMP(vCREATED_END_DATE, vCREATED_START_DATE ) < 0 then
-                raise CREATED_START_DATE_SMALLER_EX;
-            end if;
+--            if COMPARE_TIMESTAMP(vCREATED_END_DATE, vCREATED_START_DATE ) < 0 then
+--                raise CREATED_START_DATE_SMALLER_EX;
+--            end if;
 
             -- CHECK IF CREATED_END_DATE IS GREATER THAN CURRENT_DATE
-            if COMPARE_TIMESTAMP(vCREATED_END_DATE, SYSTIMESTAMP ) < 0 then
-                raise CREATED_END_DATE_LESS_THAN_SYS_EX;
-            end if;
+--            if COMPARE_TIMESTAMP(vCREATED_END_DATE, SYSTIMESTAMP ) < 0 then
+--                raise CREATED_END_DATE_LESS_THAN_SYS_EX;
+--            end if;
 
             RETURN 'YES';
         EXCEPTION
@@ -2450,9 +2450,12 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
             vDAYS NUMBER(5,2);
             EXISTING_BOOKING NUMBER;
             vFEE_RATE NUMBER(5,2);
+			vBLACKLISTED USERS.BLACKLISTED%TYPE;
             FETCH_TRANSACTION_ID TRANSACTION.TRANSACTION_ID%TYPE;
             EXSTING_BOOKING_EX EXCEPTION;
             INVALID_INPUT_EX EXCEPTION;
+			NO_DATA_EX EXCEPTION;
+			USER_BLACKLISTED_EX EXCEPTION;
         BEGIN
             SELECT COUNT(*) INTO EXISTING_BOOKING FROM BOOKING WHERE USER_ID=vUSER_ID AND BOOKING_STATUS IN ('INITIAL', 'IN-PROGRESS', 'COMPLETED', 'PAYMENT_FAILED');
 
@@ -2465,6 +2468,18 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
         IF NEW_BOOKING_VALIDATION(vCREATED_START_DATE, vCREATED_END_DATE, vUSER_ID, vLISTING_ID) = 'NO' THEN
             RAISE INVALID_INPUT_EX;
         END IF;
+
+			BEGIN
+				SELECT BLACKLISTED INTO vBLACKLISTED FROM USERS WHERE USER_ID=vUSER_ID;
+				EXCEPTION
+					WHEN NO_DATA_FOUND THEN
+					RAISE NO_DATA_EX;
+			END;
+
+
+			if (vBLACKLISTED is not NULL or LENGTH(trim(vBLACKLISTED))IS not NULL) and upper(trim(vBLACKLISTED)) = 'TRUE' then
+                raise USER_BLACKLISTED_EX;
+            end if;
 
             -- CALCULATE THE NUMBER OF DAYS OF THE BOOKING
             vDAYS := CAST(vCREATED_END_DATE AS DATE) - CAST(vCREATED_START_DATE AS DATE);
@@ -2489,6 +2504,8 @@ create or replace PACKAGE BODY PKG_BOOKING   AS
                 dbms_output.put_line('[ERROR] There is an open booking or a pending payment for this customer which needs to be taken care of before booking another ride');
             when INVALID_INPUT_EX then
                 dbms_output.put_line('[ERROR] Invalid Input');
+            when USER_BLACKLISTED_EX then
+                dbms_output.put_line('[ERROR] User blacklisted. Cannot book a ride');
     END INSERT_NEW_BOOKING;
 
     PROCEDURE BOOKING_IN_PROGRESS(
