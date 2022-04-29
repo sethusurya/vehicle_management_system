@@ -384,36 +384,19 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
 END PCKG_USERS;
 /
 
---EXECUTE PCKG_USERS.UPDATE_USER('Jai', 'jai@gmail.com', '8525417883', 'Jai', 'Jain', '875ABD', '7892145639','JJH589LK', 'FALSE', 'ADDR_8');
-
---EXECUTE PCKG_USERS.UPDATE_USER('Jai', 'jai@gmail.com', '8525417883', 'Jai', 'Jain', '875ABD', '7892145639','JJH589LK', 'FALSE', 'ADDR_8');
-
-
-
-
---SELECT * FROM USERS;
---EXECUTE PCKG_USERS.INSERT_USER('Sethu', 'sethu@gmail.com', '8573337398', 'Sethu', 'Pao', '12345', '3333333','CCV777', 'TRUE', 'ADDR_2');
---EXECUTE PCKG_USERS.INSERT_USER('Noordeep', 'noordeep@gmail.com', '8574151025', 'Noor', 'Gill', '54321', '9876543','ABFG21', 'TRUE', 'ADDR_2');
---EXECUTE PCKG_USERS.INSERT_USER('Yash', 'yash@gmail.com', '8574151111', 'Yash', 'Jain', '85247', '7412589','INJG21', 'TRUE', 'ADDR_2');
---EXECUTE PCKG_USERS.INSERT_USER('Deep', 'deep@gmail.com', '8572220011', 'Deep', 'Vaidya', '96324', '8521475','IN2221', 'TRUE', 'ADDR_2');
---EXECUTE PCKG_USERS.INSERT_USER('Sai', 'sai@gmail.com', '8573330441', 'Sai', 'Kumar', '85412', '987523','IN3030', 'TRUE', 'ADDR_2');
-
-----EXECUTE PCKG_USERS.INSERT_USER('Sai', 'sai@gmail.com', '8573330441', 'Sai', 'Kumar', '85412', '987523','IN3030', 'TRUE', 'ADDR_2');
---EXECUTE PCKG_USERS.INSERT_USER('Sethu', 'sethu@gmail.com', '8573337398', 'Sethu', 'Pao', '12345', '3333333','CCV777', 'TRUE', 'ADDR_2');
---EXECUTE PCKG_USERS.INSERT_USER('Noordeep', 'noordeep@gmail.com', '8574151025', 'Noor', 'Gill', '54321', '9876543','ABFG21', 'TRUE', 'ADDR_2');
---EXECUTE PCKG_USERS.INSERT_USER('Yash', 'yash@gmail.com', '8574151111', 'Yash', 'Jain', '85247', '7412589','INJG21', 'TRUE', 'ADDR_2');
---EXECUTE PCKG_USERS.INSERT_USER('Deep', 'deep@gmail.com', '8572220011', 'Deep', 'Vaidya', '96324', '8521475','IN2221', 'TRUE', 'ADDR_2');
---EXECUTE PCKG_USERS.INSERT_USER('Sai', 'sai@gmail.com', '8573330441', 'Sai', 'Kumar', '85412', '987523','IN3030', 'TRUE', 'ADDR_2');
-
---EXECUTE PCKG_USERS.DELETE_USER('sai@gmail.COM');
---EXECUTE PCKG_USERS.DELETE_USER('sethu@gmail.com');
---EXECUTE PCKG_USERS.DELETE_USER('noordeep@gmail.com');
---EXECUTE PCKG_USERS.DELETE_USER('yash@gmail.COM');
---EXECUTE PCKG_USERS.DELETE_USER('deep@gmail.COM');
---EXECUTE PCKG_USERS.DELETE_USER('sai@gmail.COM');
---SELECT * FROM BOOKING;
---SELECT * FROM USERS;
-
---SELECT * FROM ADDRESS;
---EXECUTE PCKG_USERS.UPDATE_USER('Deepu', 'yash@gmail.com', '2587412569', 'Yash kumar', 'Shah', 'TTT223', '7344489', 'ILGXX1', 'TRUE');
---EXECUTE PCKG_USERS.UPDATE_USER('Vivek', 'yohesh@gmail.com', '2587412569', 'Vivek kumar', 'lala', 'TT8823', '2124489', 'IGGXX1', 'TRUE');
+EXECUTE PCKG_USERS.INSERT_USER('Sethu', 'sethu@gmail.com', '8573337398', 'Sethu', 'Pag', '123456', '6987451254','CXCV7743', 'FALSE', 'ADDR_1');
+EXECUTE PCKG_USERS.INSERT_USER('Noordeep', 'noordeep@gmail.com', '8574151025', 'Noor', 'Gill', '54A3C21', '2587412589','ABFG2170', 'FALSE', 'ADDR_2');
+EXECUTE PCKG_USERS.INSERT_USER('Yash', 'yash@gmail.com', '8574151111', 'Yash', 'Jain', '8C52F47', '7412589124','INJ34G21', 'FALSE', 'ADDR_3');
+EXECUTE PCKG_USERS.INSERT_USER('Raj', 'raj@gmail.com', '8576182598', 'Raj', 'Rampal', 'ZQ56425', '4425133458','FRA79701', 'FALSE', 'ADDR_4');
+EXECUTE PCKG_USERS.INSERT_USER('Rohan', 'rohan@gmail.com', '8575551025', 'Rohan', 'Jain', '8Z54W12', '9898443612','INFX2143', 'FALSE', 'ADDR_5');
+EXECUTE PCKG_USERS.INSERT_USER('Yohesh', 'yohesh@gmail.com', '8574152211', 'Yogesh', 'Mahato', '254DCF2', '7412559739','AFJG2176', 'FALSE', 'ADDR_6');
+EXECUTE PCKG_USERS.INSERT_USER('Sneha', 'sneha@gmail.com', '9882220011', 'Sneha', 'Vaidya', 'AV91024', '8521475348','INXA2221', 'FALSE', 'ADDR_7');
+EXECUTE PCKG_USERS.INSERT_USER('Suzan', 'suzan@gmail.com', '9983330441', 'Suzan', 'Kumar', 'VC87432', '9869335461','INL31315', 'FALSE', 'ADDR_8');
+EXECUTE PCKG_USERS.INSERT_USER('Sajag', 'sajag@yahoo.com', '8573337398', 'Sajag', 'Jain', 'AXRT431', '5894435434','ACCVX797', 'FALSE', 'ADDR_9');
+EXECUTE PCKG_USERS.INSERT_USER('Rowen', 'rowen@yahoo.com', '8555751025', 'Rowen', 'Ram', 'AHJ5432', '9878543541','AGG21X40', 'FALSE', 'ADDR_10');
+EXECUTE PCKG_USERS.INSERT_USER('Rohit', 'rohit@yahoo.com', '8961351111', 'Rohit', 'Kumar', 'XXC85247', '7413589661','AFINZG21', 'FALSE', 'ADDR_11');
+EXECUTE PCKG_USERS.INSERT_USER('Rajnesh', 'rajnesh@yahoo.com', '4157772598', 'Rajnesh', 'Jain', 'AFK56425', '8894443433','FRHYT777', 'FALSE', 'ADDR_12');
+EXECUTE PCKG_USERS.INSERT_USER('Ritika', 'ritika@yahoo.com', '8544451035', 'Ritika', 'Rampuri', 'DAZ85412', '9899443885','GNAFJX21', 'FALSE', 'ADDR_13');
+EXECUTE PCKG_USERS.INSERT_USER('Somesh', 'somesh@yahoo.com', '8575512211', 'Somesh', 'Mahato', '254DCX1', '7414559554','CFJG2121', 'FALSE', 'ADDR_14');
+EXECUTE PCKG_USERS.INSERT_USER('Rama', 'rama@yahoo.com', '5572220011', 'Rama', 'Krishna', 'JJZ9102', '8521485663','UN222132', 'FALSE', 'ADDR_15');
+EXECUTE PCKG_USERS.INSERT_USER('Akshay', 'akshay@yahoo.com', '6987630441', 'Akshay', 'Patil', 'AJK87432', '9899869631','IGAX3131', 'FALSE', 'ADDR_16');
