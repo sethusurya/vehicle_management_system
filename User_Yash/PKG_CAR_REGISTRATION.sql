@@ -117,6 +117,7 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
     INVALID_EMPLOYEE_ID EXCEPTION;
     INVALID_CAR_REGISTER_ID_PRESENT EXCEPTION;
     INVALID_ADDRESS_DETAILS EXCEPTION;
+    INVALID_ADDRESS_DETAILS_ID EXCEPTION;
     INVALID_FEE_RATE EXCEPTION;
     ID_CHECK Number;
     vEMPLOYEE_ID CAR_REGISTRATION.EMPLOYEE_ID%type;
@@ -127,7 +128,7 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
         if vEMP_EMAIL is NULL or LENGTH(TRIM(vEMP_EMAIL)) is NULL or NOT (TRIM(vEMP_EMAIL)) LIKE '%@_%._%' then
             raise INVALID_EMPLOYEE_ID;
         end if;
-        
+
          begin
             select Count(*) into ID_CHECK from CAR_REGISTRATION where CAR_REGISTER_ID = TRIM(UPPER(vCAR_REGISTER_ID));
             IF ID_CHECK > 0 THEN
@@ -148,12 +149,21 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
             raise INVALID_ADDRESS_DETAILS;
         end if;
         begin
-            select Count(*) into ID_CHECK from Address where ADDRESS_LINE_1 = TRIM(UPPER(vADDRESS_LINE_1)) and ADDRESS_TYPE = 'PARKING';
+            select Count(*) into ID_CHECK from Address where ADDRESS_LINE_1 = TRIM(UPPER(vADDRESS_LINE_1));
             if(ID_CHECK = 0) then  
                 PCKG_PARKING_EXT.INSERT_PARKING_EXT(vADDRESS_LINE_1, vADDRESS_LINE_2, vZIP_CODE, vCITY_NAME, vSTATE_NAME, vCOUNTRY_NAME);
                 select ADDRESS_ID into vADDRESS_ID from Address where ADDRESS_LINE_1 = TRIM(UPPER(vADDRESS_LINE_1)) and ADDRESS_TYPE = 'PARKING';
             else
-                select ADDRESS_ID into vADDRESS_ID from Address where ADDRESS_LINE_1 = TRIM(UPPER(vADDRESS_LINE_1)) and ADDRESS_TYPE = 'PARKING';
+                begin
+                 select ADDRESS_ID into vADDRESS_ID from Address where ADDRESS_LINE_1 = TRIM(UPPER(vADDRESS_LINE_1)) and ADDRESS_TYPE = 'PARKING';
+                 exception 
+                    when NO_DATA_FOUND then 
+                     raise INVALID_ADDRESS_DETAILS_ID;
+                end;
+                
+                if vADDRESS_ID is NULL or LENGTH(trim(vADDRESS_ID)) IS NULL then
+                    raise INVALID_ADDRESS_DETAILS_ID;
+                end if;
             end if;
         end;
         if vFEE_RATE is NULL then
@@ -172,6 +182,8 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
             dbms_output.put_line('CAR REGISTER ID already present !!!');
           when INVALID_ADDRESS_DETAILS then
             dbms_output.put_line('Invalid Address Details !!!');
+          when INVALID_ADDRESS_DETAILS_ID then
+            dbms_output.put_line('Address already taken');
          when INVALID_FEE_RATE then
             dbms_output.put_line('FEE RATE IS INVALID !!!');
 
@@ -289,14 +301,14 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
         if vCAR_CATEGORY_ID is NULL or LENGTH(TRIM(vCAR_CATEGORY_ID)) is NULL then
             raise INVALID_CAR_CATEGORY_ID;
         end if; 
-        
+
         begin
             select Count(*) into ID_CHECK from CAR_CATEGORY where CAR_CATEGORY_ID = TRIM(UPPER(vCAR_CATEGORY_ID));
             if(ID_CHECK = 0) then 
                 raise INVALID_CAR_CATEGORY_ID;
             end if;
         end;
-        
+
         if vEMPLOYEE_ID is NULL or  LENGTH(vEMPLOYEE_ID) is NULL then
             raise INVALID_EMPLOYEE_ID;
         end if;
@@ -386,7 +398,7 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
         select Count(*) into counts FROM CAR_REGISTRATION where CAR_REGISTER_ID = TRIM(UPPER(vCAR_REGISTER_ID));
         RETURN counts;
     END BODY_CAR_REGISTER_ID_CHECK; 
-    
+
     PROCEDURE BODY_CAR_REGISTER_DELETE_DATA(
         vCAR_REGISTER_ID IN CAR_REGISTRATION.CAR_REGISTER_ID%type
     ) AS
@@ -412,7 +424,7 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
              dbms_output.put_line('On going booking');
         end if;
     END BODY_CAR_REGISTER_DELETE_DATA;
-    
+
     PROCEDURE BODY_CAR_REGISTER_UPDATE_TABLE(
         vCAR_REGISTER_ID IN CAR_REGISTRATION.CAR_REGISTER_ID%type,
         uCAR_NAME IN CAR_REGISTRATION.CAR_NAME%type, 
@@ -458,7 +470,7 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
             PCKG_CAR_CATEGORY.CHECK_AND_RETURN_ID(uCAR_CATEGORY_NAME, vCAR_CATEGORY_ID);
         end;
         end if;
-        
+
         if vEMP_EMAIL is NULL or LENGTH(TRIM(vEMP_EMAIL)) is NULL then
             Select EMPLOYEE_ID into vEMPLOYEE_ID from CAR_REGISTRATION where CAR_REGISTER_ID = TRIM(UPPER(vCAR_REGISTER_ID));
         else
@@ -473,14 +485,14 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
                 select EMPLOYEE_ID into vEMPLOYEE_ID from EMPLOYEE where EMP_EMAIL = TRIM(UPPER(vEMP_EMAIL));
             end;
         end if;
-        
+
         if uCAR_NAME is NULL or LENGTH(TRIM(uCAR_NAME)) is NULL then
             Select CAR_NAME into vCAR_NAME from CAR_REGISTRATION where CAR_REGISTER_ID = TRIM(UPPER(vCAR_REGISTER_ID));
         else
             vCAR_NAME:= uCAR_NAME;
-            
+
         end if;
-        
+
         if uCAR_COLOR is NULL or  LENGTH(uCAR_COLOR) is NULL then
             Select CAR_COLOR into vCAR_COLOR from CAR_REGISTRATION where CAR_REGISTER_ID = TRIM(UPPER(vCAR_REGISTER_ID));
         else
@@ -498,7 +510,7 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
         else
             vYEAR_OF_MANUFACTURE:= uYEAR_OF_MANUFACTURE;
         end if;
-        
+
         if uFUEL_TYPE is NULL or LENGTH(TRIM(uFUEL_TYPE)) is NULL then
             Select FUEL_TYPE into vFUEL_TYPE from CAR_REGISTRATION where CAR_REGISTER_ID = TRIM(UPPER(vCAR_REGISTER_ID));
         else
@@ -522,7 +534,7 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
         else
             vREGISTRATION_DATE:= uREGISTRATION_DATE;
         end if;
-        
+
         Select BODY_CAR_REGISTER_CHECK(vCAR_REGISTER_ID, vCAR_NAME, vCAR_COLOR, vCAR_COMPANY, vYEAR_OF_MANUFACTURE, vREGISTRATION_DATE, vFUEL_TYPE, vTRANSMISSION_TYPE, vNO_OF_SEATS, vCAR_CATEGORY_ID, vEMPLOYEE_ID, vADDRESS_ID) INTO Conditions from dual;
         if Conditions = 'YES' and  temp_car_id > 0 THEN
             UPDATE CAR_REGISTRATION SET CAR_NAME = UPPER(vCAR_NAME),  
