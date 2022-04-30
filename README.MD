@@ -11,4 +11,8 @@ TEAM MEMBERS: <br>
 • Yash Jain – 001521876 <br>
 
 Note : Please run the files in the following manner as mentioned in the directory.
+Please run step 1 to create a user
+then connect to that user
+then run step 2 to step 7 for all the sequences, tables , data, views
+step 8 has reports
 
