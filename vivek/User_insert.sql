@@ -12,3 +12,5 @@ EXECUTE PCKG_USERS.INSERT_USER('Johnson', 'Johnson@gmail.com', '8574152211', 'Jo
 EXECUTE PCKG_USERS.INSERT_USER('Emma', 'Emma@gmail.com', '2572220441', 'Emma', 'Watson', '91876', '8521654','ZXD333', 'TRUE', 'ADDR_1');
 EXECUTE PCKG_USERS.INSERT_USER('Hima', 'Hima@gmail.com', '7083330971', 'Hima', 'Kumari', '87435', '9869354','IN3133', 'TRUE', 'ADDR_3');
 EXECUTE PCKG_USERS.INSERT_USER('Varun', 'Varun@gmail.com', '9876337398', 'Varun', 'Pinne', '12346', '3333324','CBV797', 'TRUE', 'ADDR_1');
+EXECUTE PCKG_USERS.INSERT_USER('Naar', 'Hbbri@gmail.com', '9975537396', 'Ha', 'S', '77398', '2233678','CDV783', 'TRUE', 'ADDR_2');
+EXECUTE PCKG_USERS.INSERT_USER('Pari', 'Hannri@gmail.com', '9974337396', 'ri', 'i', '99398', '1133678','CDV783', 'TRUE', 'ADDR_2');
