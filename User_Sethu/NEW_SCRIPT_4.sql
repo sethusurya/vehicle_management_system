@@ -3436,6 +3436,7 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
         ex_INVALID_PASSPORT_NUM EXCEPTION;
         ex_INVALID_EMAIL EXCEPTION;
         ex_INVALID_PASSPORT_NUMBER EXCEPTION;
+        exe_INVALID_BLACKLISTED EXCEPTION;
 
         CHECK_ADDRESS_COUNT NUMBER(38);
         CHECK_EMAIL_COUNT NUMBER(38);
@@ -3509,10 +3510,14 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
             raise ex_INVALID_EMAIL;
         end if;
         
+        if vBLACKLISTED is NULL or LENGTH(trim(vBLACKLISTED)) = 0 or UPPER(vBLACKLISTED) NOT IN ('TRUE', 'FALSE') then 
+            raise exe_INVALID_BLACKLISTED;
+        end if;
+        
         IF CHECK_EMAIL_COUNT = 0 AND CHECK_USER_NAME_COUNT = 0 AND CHECK_DL_COUNT = 0 AND CHECK_PASSPORT_COUNT = 0 THEN 
         INSERT INTO USERS(USER_ID, PASSWORD, USER_NAME, EMAIL, PHONE_NO, FIRST_NAME, LAST_NAME, DATE_OF_JOINING, DRIVER_LICENSE, PASSPORT, BLACKLISTED, ADDRESS_ID)
         VALUES
-        ('USER_' || USERS_ID_SEQ.NEXTVAL, vPASSWORD, UPPER(vUSER_NAME), LOWER(vEMAIL), vPHONE_NO, UPPER(vFIRST_NAME), UPPER(vLAST_NAME), SYSDATE, vDRIVER_LICENSE, UPPER(vPASSPORT), vBLACKLISTED, vADDRESS_ID);
+        ('USER_' || USERS_ID_SEQ.NEXTVAL, vPASSWORD, UPPER(vUSER_NAME), LOWER(vEMAIL), vPHONE_NO, UPPER(vFIRST_NAME), UPPER(vLAST_NAME), SYSDATE, vDRIVER_LICENSE, UPPER(vPASSPORT), UPPER(vBLACKLISTED), vADDRESS_ID);
         END IF;
 
         EXCEPTION
@@ -3535,7 +3540,9 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
             when ex_INVALID_EMAIL then 
                 dbms_output.put_line('Email is NULL or invalid !!!');
             when ex_INVALID_PASSPORT_NUM then 
-                dbms_output.put_line('Passport is NULL or invalid !!!');  
+                dbms_output.put_line('Passport is NULL or invalid !!!'); 
+            When exe_INVALID_BLACKLISTED then 
+                dbms_output.put_line('Invalid blacklisted value !!!'); 
     END INSERT_USER;
     
     PROCEDURE DELETE_USER(
@@ -3605,6 +3612,7 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
         ex_INVALID_EMAIL_FOR_UPDATE EXCEPTION;
         ex_INVALID_PHONE_NO EXCEPTION;
         ex_INVALID_PASSPORT_NO EXCEPTION;
+        ex_INVALID_BLACKLISTED EXCEPTION;
         
         BEGIN 
         
@@ -3640,6 +3648,10 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
             raise ex_INVALID_PASSPORT_NO;
         end if;
         
+       if vBLACKLISTED is NULL or LENGTH(trim(vBLACKLISTED)) = 0 or UPPER(vBLACKLISTED) NOT IN ('TRUE', 'FALSE') then 
+            raise ex_INVALID_BLACKLISTED;
+        end if;
+        
         if CHECK_PASSPORT(vPASSPORT) = 'NO' AND  CHECK_DRIVER_LICENSE(vDRIVER_LICENSE) = 'NO' then 
         UPDATE USERS 
         SET PHONE_NO = vPHONE_NO, FIRST_NAME = vFIRST_NAME, LAST_NAME = vLAST_NAME, PASSWORD = vPASSWORD, DRIVER_LICENSE = vDRIVER_LICENSE, PASSPORT = vPASSPORT, BLACKLISTED = vBLACKLISTED
@@ -3663,6 +3675,8 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_USERS  AS
                 dbms_output.put_line('Passport is NULL or invalid !!!'); 
              when ex_INVALID_PHONE_NO then 
                 dbms_output.put_line('Phone number is NULL or invalid !!!'); 
+              when ex_INVALID_BLACKLISTED then   
+                dbms_output.put_line('Blacklisted value is invalid or null!!!'); 
         END UPDATE_USER;
         
         FUNCTION CHECK_DRIVER_LICENSE
