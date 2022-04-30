@@ -119,6 +119,7 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
     INVALID_ADDRESS_DETAILS EXCEPTION;
     INVALID_ADDRESS_DETAILS_ID EXCEPTION;
     INVALID_FEE_RATE EXCEPTION;
+    INVALID_REGISTRATION_DATE EXCEPTION;
     ID_CHECK Number;
     vEMPLOYEE_ID CAR_REGISTRATION.EMPLOYEE_ID%type;
     vADDRESS_ID CAR_REGISTRATION.ADDRESS_ID%type;
@@ -148,6 +149,9 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
         if vADDRESS_LINE_1 is NULL or LENGTH(TRIM(vADDRESS_LINE_1)) is NULL or vZIP_CODE is NULL or LENGTH(TRIM(vZIP_CODE)) is NULL or vCITY_NAME is NULL or LENGTH(TRIM(vCITY_NAME)) is NULL or vSTATE_NAME is NULL or LENGTH(TRIM(vSTATE_NAME)) is NULL or vCOUNTRY_NAME is NULL or LENGTH(TRIM(vCOUNTRY_NAME)) is NULL then
             raise INVALID_ADDRESS_DETAILS;
         end if;
+        if vREGISTRATION_DATE is NULL or to_char(LENGTH(vREGISTRATION_DATE)) is NULL or vREGISTRATION_DATE > SYSDATE then
+                raise INVALID_REGISTRATION_DATE;
+        end if;
         begin
             select Count(*) into ID_CHECK from Address where ADDRESS_LINE_1 = TRIM(UPPER(vADDRESS_LINE_1));
             if(ID_CHECK = 0) then  
@@ -160,7 +164,7 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
                     when NO_DATA_FOUND then 
                      raise INVALID_ADDRESS_DETAILS_ID;
                 end;
-                
+
                 if vADDRESS_ID is NULL or LENGTH(trim(vADDRESS_ID)) IS NULL then
                     raise INVALID_ADDRESS_DETAILS_ID;
                 end if;
@@ -186,6 +190,8 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
             dbms_output.put_line('Address already taken');
          when INVALID_FEE_RATE then
             dbms_output.put_line('FEE RATE IS INVALID !!!');
+         when INVALID_REGISTRATION_DATE then
+            dbms_output.put_line('Invalid registration date is invalid !!!');
 
     END BODY_CAR_REGISTER_DATA;
 
@@ -288,7 +294,7 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
             raise INVALID_NO_OF_SEATS;
         end if;
 
-        if vREGISTRATION_DATE is NULL or to_char(LENGTH(vREGISTRATION_DATE)) is NULL then
+        if vREGISTRATION_DATE is NULL or to_char(LENGTH(vREGISTRATION_DATE)) is NULL or vREGISTRATION_DATE > SYSDATE then
                 raise INVALID_REGISTRATION_DATE;
         end if;
 
@@ -412,11 +418,11 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
             raise INVALID_CAR_REGISTER_ID;
         end if; 
         Select BODY_CAR_REGISTER_ID_CHECK(vCAR_REGISTER_ID) INTO temp_car_id from dual;
-        if Not(temp_car_id > 0) then
+         dbms_output.put_line(temp_car_id);
+        if (temp_car_id = 0) then
              raise INVALID_CAR_REGISTER_ID;
         end if;
         select listing_id into vlisting_id from car_listing where CAR_REGISTER_ID = TRIM(UPPER(vCAR_REGISTER_ID));
-        select address_id into vaddress_id from CAR_REGISTRATION where CAR_REGISTER_ID = TRIM(UPPER(vCAR_REGISTER_ID));
         select count(*) into vbooking_count from booking where listing_id = TRIM(UPPER(vlisting_id)) and (BOOKING_STATUS in ('INITIAL', 'IN-PROGRESS'));
         if vbooking_count = 0 then
             Delete from  car_listing where CAR_REGISTER_ID = TRIM(UPPER(vCAR_REGISTER_ID));
