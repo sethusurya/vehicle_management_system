@@ -1,2 +1,0 @@
-select STATUS, 'TRANSACTION STATUS VS TOTAL', count(*) from TRANSACTION
-group by STATUS;
