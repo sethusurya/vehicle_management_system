@@ -578,7 +578,7 @@ END PKG_CAR_REGISTER;
 /
 
 -- select * from CAR_REGISTRATION;
--- EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER_DATA('Artyhbnju123fthy80', 'city', 'RED', 'honda ', 2018, '1-JAN-2018', 'gasoline','manual',4,'hatchback','PAGOLU.S@NORTHEASTERN.EDU','151 SHEPHERD AVE','APT 2','02115','BOSTON','MA','USA', 10);
+-- EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER_DATA('Artyhbnju123fthyg7', 'city', 'RED', 'honda ', 2018, '1-JAN-2018', 'gasoline','manual',4,'hatchback','PAGOLU.S@NORTHEASTERN.EDU','51 SHEPHERD AVE','APT 2','02115','BOSTON','MA','USA', 10);
 -- EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER_DATA('Artyhbnju123fthyg8', 'civic', 'white', 'honda ', 2019, '1-JAN-2019', 'gasoline','manual',4,'hatchback','PAGOLU.S@NORTHEASTERN.EDU','52 SHEPHERD AVE','APT 2','02115','BOSTON','MA','USA', 12.5);
 -- EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER_DATA('Artyhbnju123fthyg9', 'accord', 'black', 'honda ', 2020, '1-FEB-2020', 'gasoline','manual',4,'SEDAN','PAGOLU.S@NORTHEASTERN.EDU','53 SHEPHERD AVE','APT 2','02115','BOSTON','MA','USA', 14.5);
 -- EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER_DATA('Artyhbnju123fthyg0', 'A7', 'RED', 'audi ', 2019, '1-MAR-2019', 'gasoline','automatic',4,'SEDAN','PAGOLU.S@NORTHEASTERN.EDU','54 SHEPHERD AVE','APT 2','02115','BOSTON','MA','USA', 20.5);
@@ -593,7 +593,8 @@ END PKG_CAR_REGISTER;
 -- EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER_DATA('Artyhbnju123fthya8', 'model 3', 'RED', 'tesla ', 2019, '1-FEB-2019', 'electric','automatic',4,'SEDAN','PAGOLU.S@NORTHEASTERN.EDU','62 SHEPHERD AVE','APT 2','02115','BOSTON','MA','USA', 17.5);
 -- EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER_DATA('Artyhbnju123fthya9', 'wrangler', 'white', 'jeep ', 2020, '1-APR-2020', 'diesel','automatic',6,'suv','PAGOLU.S@NORTHEASTERN.EDU','63 SHEPHERD AVE','APT 2','02115','BOSTON','MA','USA', 20.5);
 -- EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER_DATA('Artyhbnju123fthyb1', 'cherokee', 'black', 'jeep ', 2018, '1-MAR-2018', 'diesel','automatic',6,'suv','PAGOLU.S@NORTHEASTERN.EDU','65 SHEPHERD AVE','APT 2','02115','BOSTON','MA','USA', 22.5);
--- EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER_UPDATE_TABLE('Artyhbnju123fthyg2', 'zica', 'white', '', '', '1-JAN-2019', 'gasoline','manual',4,'suv','PAGOLU.S@NORTHEASTERN.EDU');
+-- EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER_DATA('Artyhbnju123fthy80', 'city', 'white', 'honda ', 2018, '1-JAN-2018', 'gasoline','manual',4,'hatchback','PAGOLU.S@NORTHEASTERN.EDU','500 SHEPHERD AVE','APT 2','02115','BOSTON','MA','USA', 10);
+-- EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER_UPDATE_TABLE('Artyhbnju123fthyg7', 'city', 'white', '', '', '1-JAN-2019', 'gasoline','manual',4,'','PAGOLU.S@NORTHEASTERN.EDU');
 -- EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER_DELETE_DATA('Artyhbnju123fthy80');
 
 -- select * from car_listing;
