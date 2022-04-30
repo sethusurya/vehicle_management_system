@@ -4,7 +4,7 @@
 --------------------------------------
 
 create or replace view support_view as
-select usr.FIRST_NAME, usr.LAST_NAME, usr.EMAIL
+select usr.FIRST_NAME, usr.LAST_NAME, usr.EMAIL,
 book.LISTING_ID, 
 carlist.car_register_id, carlist.fee_rate, 
 car.CAR_NAME, car.car_company, 
