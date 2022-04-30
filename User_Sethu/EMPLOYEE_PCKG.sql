@@ -12,6 +12,12 @@ CREATE OR REPLACE EDITIONABLE PACKAGE PCKG_EMPLOYEE AS
     PROCEDURE REMOVE_EMPLOYEE(
         vEMP_EMAIL IN EMPLOYEE.EMP_EMAIL%type
     );
+
+    PROCEDURE UPDATE_EMPLOYEE(
+        vEMP_EMAIL IN EMPLOYEE.EMP_EMAIL%type,
+        vEMP_FIRST_NAME IN EMPLOYEE.EMP_FIRST_NAME%type,
+        vEMP_LAST_NAME IN EMPLOYEE.EMP_LAST_NAME%type
+    );
 END PCKG_EMPLOYEE;
 /
 
@@ -127,6 +133,46 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_EMPLOYEE AS
         WHEN ex_REGISTRATIONS_EXIST THEN
             dbms_output.put_line('CAR REGISTRATIONS EXIST FOR THE EMPLOYEE, PLEASE REMOVE THEM TO REMOVE EMPLOYEE!!!!');
     END REMOVE_EMPLOYEE;
+
+    PROCEDURE UPDATE_EMPLOYEE(
+        vEMP_EMAIL IN EMPLOYEE.EMP_EMAIL%type,
+        vEMP_FIRST_NAME IN EMPLOYEE.EMP_FIRST_NAME%type,
+        vEMP_LAST_NAME IN EMPLOYEE.EMP_LAST_NAME%type
+    ) AS
+    ex_INVALID_FIRST_NAME EXCEPTION;
+    ex_INVALID_LAST_NAME EXCEPTION;
+    ex_EMPLOYEE_DONT_EXIST EXCEPTION;
+    vCount Number(5);
+    BEGIN
+    -- check if the employee exists
+    -- if exists change first name and last name
+            BEGIN
+                SELECT count(*) INTO vCount FROM EMPLOYEE WHERE EMP_EMAIL = UPPER(TRIM(vEMP_EMAIL));
+                EXCEPTION
+                    WHEN NO_DATA_FOUND THEN
+                        vCount := 0;
+            END;
+            IF vCount = 0 THEN
+                raise ex_EMPLOYEE_DONT_EXIST;
+            END IF;
+            if vEMP_FIRST_NAME is NULL or REGEXP_LIKE(TRIM(vEMP_FIRST_NAME) , '^[0-9]*$') is NULL then
+                raise ex_INVALID_FIRST_NAME;
+            end if;
+            
+            if vEMP_LAST_NAME is NULL or REGEXP_LIKE(TRIM(vEMP_LAST_NAME) , '^[0-9]*$') is NULL then
+                raise ex_INVALID_LAST_NAME;
+            end if;
+
+            UPDATE EMPLOYEE set EMP_FIRST_NAME = UPPER(TRIM(vEMP_FIRST_NAME)), EMP_LAST_NAME = UPPER(TRIM(vEMP_LAST_NAME)) WHERE UPPER(EMP_EMAIL) = UPPER(TRIM(vEMP_EMAIL));
+            dbms_output.put_line('EMPLOYEE DATA UPDATED!!!');
+        EXCEPTION
+            WHEN ex_INVALID_LAST_NAME THEN
+                dbms_output.put_line('INVALID LAST NAME !!!!');
+            WHEN ex_INVALID_FIRST_NAME THEN
+                dbms_output.put_line('INVALID FIRST NAME !!!');
+            WHEN ex_EMPLOYEE_DONT_EXIST THEN
+                dbms_output.put_line('EMPLOYEE DONT EXIST !!!');
+    END UPDATE_EMPLOYEE;
 
 END PCKG_EMPLOYEE;
 /

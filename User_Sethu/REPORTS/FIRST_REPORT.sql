@@ -20,6 +20,6 @@ LEFT JOIN CAR_REGISTRATION CR
 ON cr.car_register_id = cl.car_register_id
 left join car_category cc
 on cr.car_category_id = cc.car_category_id
-GROUP BY cc.car_category_name
+GROUP BY cc.car_category_name;
 
 --------------------------------------------------------------------------
