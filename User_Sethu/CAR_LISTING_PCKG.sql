@@ -116,7 +116,7 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY PCKG_CAR_LISTING AS
     BEGIN
         select count(*) into vCount from car_listing where UPPER(car_register_id) = UPPER(vCAR_REGISTER_ID);
         IF vCount > 0 THEN
-            RAISE ex_LISTING_EXISTS
+            RAISE ex_LISTING_EXISTS;
         END IF;
         IF PROCESS_CAR_LISTING(vAVAILABILITY, SYSDATE,vFEE_RATE,vCAR_REGISTER_ID, vCAR_PARKING_ID) = 'NO' THEN
             RAISE ex_INVALID;
