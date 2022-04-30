@@ -406,10 +406,14 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
     vlisting_id car_listing.listing_id%type;
     vaddress_id CAR_REGISTRATION.address_id%type;
     vbooking_count Number;
+    INVALID_CAR_REGISTER_ID EXCEPTION;
     BEGIN
+        if vCAR_REGISTER_ID is NULL or LENGTH(TRIM(vCAR_REGISTER_ID)) = 0 or LENGTH(TRIM(vCAR_REGISTER_ID)) !=18 then
+            raise INVALID_CAR_REGISTER_ID;
+        end if; 
         Select BODY_CAR_REGISTER_ID_CHECK(vCAR_REGISTER_ID) INTO temp_car_id from dual;
         if Not(temp_car_id > 0) then
-             dbms_output.put_line('Invalid CAR_REGISTER ID !!!');
+             raise INVALID_CAR_REGISTER_ID;
         end if;
         select listing_id into vlisting_id from car_listing where CAR_REGISTER_ID = TRIM(UPPER(vCAR_REGISTER_ID));
         select address_id into vaddress_id from CAR_REGISTRATION where CAR_REGISTER_ID = TRIM(UPPER(vCAR_REGISTER_ID));
@@ -423,6 +427,9 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
         else
              dbms_output.put_line('On going booking');
         end if;
+    EXCEPTION
+      when INVALID_CAR_REGISTER_ID then
+        dbms_output.put_line('Invalid CAR_REGISTER_ID !!!');
     END BODY_CAR_REGISTER_DELETE_DATA;
 
     PROCEDURE BODY_CAR_REGISTER_UPDATE_TABLE(
