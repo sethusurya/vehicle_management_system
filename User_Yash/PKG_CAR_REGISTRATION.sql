@@ -173,12 +173,16 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
         if vFEE_RATE is NULL then
             raise INVALID_FEE_RATE;
         end if;
-        BODY_CAR_REGISTER(UPPER(vCAR_REGISTER_ID), UPPER(vCAR_NAME), UPPER(vCAR_COLOR), UPPER(vCAR_COMPANY), to_number(vYEAR_OF_MANUFACTURE), vREGISTRATION_DATE, UPPER(vFUEL_TYPE), UPPER(vTRANSMISSION_TYPE), to_number(vNO_OF_SEATS), UPPER(vCAR_CATEGORY_ID), UPPER(vEMPLOYEE_ID), UPPER(vADDRESS_ID));
         begin
-            dbms_output.put_line(vADDRESS_ID);
             select PARKING_ID into vCAR_PARKING_ID from Parking where ADDRESS_ID = TRIM(UPPER(vADDRESS_ID));
-        end;   
-        PCKG_CAR_LISTING.INSERT_CAR_LISTING('TRUE',vFEE_RATE,TRIM(UPPER(vCAR_REGISTER_ID)),TRIM(UPPER(vCAR_PARKING_ID)));
+            select count(*) into ID_CHECK from car_listing where PARKING_ID = TRIM(UPPER(vCAR_PARKING_ID));
+        end;
+        if(ID_CHECK = 0) then
+            BODY_CAR_REGISTER(UPPER(vCAR_REGISTER_ID), UPPER(vCAR_NAME), UPPER(vCAR_COLOR), UPPER(vCAR_COMPANY), to_number(vYEAR_OF_MANUFACTURE), vREGISTRATION_DATE, UPPER(vFUEL_TYPE), UPPER(vTRANSMISSION_TYPE), to_number(vNO_OF_SEATS), UPPER(vCAR_CATEGORY_ID), UPPER(vEMPLOYEE_ID), UPPER(vADDRESS_ID));
+            PCKG_CAR_LISTING.INSERT_CAR_LISTING('TRUE',vFEE_RATE,TRIM(UPPER(vCAR_REGISTER_ID)),TRIM(UPPER(vCAR_PARKING_ID)));
+        else 
+            dbms_output.put_line('Parking Full for the giving address');
+        end if;
     EXCEPTION
           when INVALID_EMPLOYEE_ID then
             dbms_output.put_line('Invalid employee email !!!');
@@ -418,7 +422,6 @@ create or replace PACKAGE BODY PKG_CAR_REGISTER AS
             raise INVALID_CAR_REGISTER_ID;
         end if; 
         Select BODY_CAR_REGISTER_ID_CHECK(vCAR_REGISTER_ID) INTO temp_car_id from dual;
-         dbms_output.put_line(temp_car_id);
         if (temp_car_id = 0) then
              raise INVALID_CAR_REGISTER_ID;
         end if;
@@ -575,7 +578,7 @@ END PKG_CAR_REGISTER;
 /
 
 -- select * from CAR_REGISTRATION;
--- EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER_DATA('Artyhbnju123fthyg7', 'city', 'RED', 'honda ', 2018, '1-JAN-2018', 'gasoline','manual',4,'hatchback','PAGOLU.S@NORTHEASTERN.EDU','51 SHEPHERD AVE','APT 2','02115','BOSTON','MA','USA', 10);
+-- EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER_DATA('Artyhbnju123fthy80', 'city', 'RED', 'honda ', 2018, '1-JAN-2018', 'gasoline','manual',4,'hatchback','PAGOLU.S@NORTHEASTERN.EDU','151 SHEPHERD AVE','APT 2','02115','BOSTON','MA','USA', 10);
 -- EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER_DATA('Artyhbnju123fthyg8', 'civic', 'white', 'honda ', 2019, '1-JAN-2019', 'gasoline','manual',4,'hatchback','PAGOLU.S@NORTHEASTERN.EDU','52 SHEPHERD AVE','APT 2','02115','BOSTON','MA','USA', 12.5);
 -- EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER_DATA('Artyhbnju123fthyg9', 'accord', 'black', 'honda ', 2020, '1-FEB-2020', 'gasoline','manual',4,'SEDAN','PAGOLU.S@NORTHEASTERN.EDU','53 SHEPHERD AVE','APT 2','02115','BOSTON','MA','USA', 14.5);
 -- EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER_DATA('Artyhbnju123fthyg0', 'A7', 'RED', 'audi ', 2019, '1-MAR-2019', 'gasoline','automatic',4,'SEDAN','PAGOLU.S@NORTHEASTERN.EDU','54 SHEPHERD AVE','APT 2','02115','BOSTON','MA','USA', 20.5);
@@ -591,4 +594,6 @@ END PKG_CAR_REGISTER;
 -- EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER_DATA('Artyhbnju123fthya9', 'wrangler', 'white', 'jeep ', 2020, '1-APR-2020', 'diesel','automatic',6,'suv','PAGOLU.S@NORTHEASTERN.EDU','63 SHEPHERD AVE','APT 2','02115','BOSTON','MA','USA', 20.5);
 -- EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER_DATA('Artyhbnju123fthyb1', 'cherokee', 'black', 'jeep ', 2018, '1-MAR-2018', 'diesel','automatic',6,'suv','PAGOLU.S@NORTHEASTERN.EDU','65 SHEPHERD AVE','APT 2','02115','BOSTON','MA','USA', 22.5);
 -- EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER_UPDATE_TABLE('Artyhbnju123fthyg2', 'zica', 'white', '', '', '1-JAN-2019', 'gasoline','manual',4,'suv','PAGOLU.S@NORTHEASTERN.EDU');
--- EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER_DELETE_DATA('Artyhbnju123fthyg7');
+-- EXECUTE PKG_CAR_REGISTER.BODY_CAR_REGISTER_DELETE_DATA('Artyhbnju123fthy80');
+
+-- select * from car_listing;
