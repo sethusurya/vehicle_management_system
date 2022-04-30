@@ -39,6 +39,8 @@ EXECUTE PCKG_EMPLOYEE.INSERT_EMPLOYEE('Karthik', 'Dinesh', 'Karthik@northeastern
 EXECUTE PCKG_EMPLOYEE.INSERT_EMPLOYEE('Pant', 'Rishab', 'Pant@northeastern.edu', 'Pant567', 'ADDR_2', '1'); 
 EXECUTE PCKG_EMPLOYEE.INSERT_EMPLOYEE('Kishan', 'Ishan', 'Kishan@northeastern.edu', 'Kishan567', 'ADDR_2', '1'); 
 EXECUTE PCKG_EMPLOYEE.INSERT_EMPLOYEE('Khaleel', 'Ahmead', 'Khaleel@northeastern.edu', 'Khaleel567', 'ADDR_3', '2'); 
+EXECUTE PCKG_EMPLOYEE.INSERT_EMPLOYEE('labby', 'gammy', 'gammy@northeastern.edu', 'gamm567', 'ADDR_2', '1'); 
+EXECUTE PCKG_EMPLOYEE.INSERT_EMPLOYEE('haleem', 'khan', 'khanl@northeastern.edu', 'khan567', 'ADDR_3', '2'); 
 
 
 
